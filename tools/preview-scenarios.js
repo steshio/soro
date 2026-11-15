@@ -157,12 +157,12 @@ module.exports = {
     await t.shot(pg, 'game-dark');
     console.log(pg.errors.length ? '  MORE ERRORS ' + JSON.stringify(pg.errors) : '  MORE OK');
     await pg.close();
-    // venue game on a phone
+    // a table game on a phone
     pg = await t.open(b, { viewport: { width: 390, height: 780 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
     await pg.tap('.nav a[data-to="play"]'); await wait(pg, 300); await t.shot(pg, 'play-phone');
     await pg.evaluate('window.IG.view.setSpeed(40); window.IG.view.setSpeed = function () {};');
     await pg.tap('[data-act="enter"]'); await wait(pg, 600);
-    console.log('  venue: ' + await G(pg, 'G.cfg.title') + ', cows now ' + await G(pg, 'P.data.cows') + ', badges ' + JSON.stringify(await G(pg, 'Object.keys(P.data.badges)')));
+    console.log('  table: ' + await G(pg, 'G.cfg.title') + ', counts off ' + await G(pg, 'G.cfg.noCounts') + ', preview off ' + await G(pg, 'G.cfg.noPreview') + ', reverse on ' + await G(pg, 'G.cfg.rules.reverseSowing') + ', cows now ' + await G(pg, 'P.data.cows') + ', badges ' + JSON.stringify(await G(pg, 'Object.keys(P.data.badges)')));
     await pg.waitForFunction('!window.IG.game.busy && window.IG.game.cfg.seats[window.IG.game.state.turn].kind === "human"', null, { timeout: 60000 });
     await pg.tap('.pit.playable'); await wait(pg, 200); await t.shot(pg, 'game-phone');
     const ov = await pg.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));

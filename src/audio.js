@@ -76,7 +76,7 @@
       var now = ctx.currentTime;
       [294, 370, 440, 587].forEach(function (f, i) { tone(f, now + i * 0.11, 0.3, 0.17, 'triangle'); tone(f * 2, now + i * 0.11, 0.12, 0.04, 'sine'); });
     },
-    /* a quiet bed of air, coloured per venue. null stops it. */
+    /* a quiet bed of air, coloured per table. null stops it. */
     ambience: function (colour) {
       if (bed) { try { bed.g.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.6); bed.s.stop(ctx.currentTime + 0.7); } catch (e) {} bed = null; }
       if (!colour || !ensure()) return;
