@@ -79,7 +79,7 @@
         IG.audio.good();
         if (L.lesson.id === 'L5' && IG.settings.get('rulesMode') === 'learn') {
           IG.settings.set('rulesMode', 'traditional');
-          IG.toast('<b>Rules mode: Traditional</b><span>Reverse sowing is now on in your games. Change it in Settings.</span>');
+          IG.toast('<b>Rules mode: Traditional</b><span>Guteba and kugarama are now on in your games. Change it in Settings.</span>');
         }
         break;
     }
@@ -135,7 +135,7 @@
     var step = L.step; if (!step) return;
     L.showAnswer = true;
     B.setGlow([[0, step.type === 'two' && L.phase === 0 ? step.first : step.answer]]);
-    L.msg = 'The glowing pit is the one.' + (step.answerDecisions ? ' Choose ' + (step.answerDecisions[0] === 'cw' ? 'kugarama' : 'guteba') + ' when asked.' : '');
+    L.msg = 'The glowing pit is the one.' + (step.answerDecisions ? ' Choose ' + (step.answerDecisions[0] === 'cw' ? (E.reverseKind(G.cfg.rules, step.answer) || 'the clockwise way') : 'the normal way') + ' when asked.' : '');
     L.status = 'note'; redraw();
   };
   L.exit = function () {
