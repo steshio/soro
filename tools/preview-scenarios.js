@@ -322,3 +322,40 @@ module.exports.online = async function (b, t) {
   const errs = A.errors.concat(pages[1].errors);
   console.log(good && !errs.length ? '  ONLINE OK' : '  ONLINE HAD PROBLEMS ' + JSON.stringify(errs));
 };
+
+/* the full-screen toggle: enter, play a move, the coach note inside the stage, leave by button and by Escape */
+module.exports.full = async function (b, t) {
+  for (const vp of [{ name: 'desktop', o: {} }, { name: 'phone', o: { viewport: { width: 390, height: 780 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true } }]) {
+    const pg = await t.open(b, vp.o);
+    await pg.evaluate('window.IG.view.setSpeed(40); window.IG.view.setSpeed = function () {};');
+    await pg.click('.nav a[data-to="play"]'); await wait(pg, 200);
+    console.log('  ' + vp.name + ': toggle offered in the menus: ' + await pg.isVisible('[data-act="full"]'));
+    await pg.click('[data-act="practice"]'); await wait(pg, 500);
+    const before = await pg.evaluate('document.querySelector("#board").getBoundingClientRect().width');
+    await pg.click('[data-act="full"]'); await wait(pg, 600);
+    const st = await pg.evaluate('({ full: window.IG.ui.full, cls: document.querySelector("#stage").classList.contains("full"), real: !!document.fullscreenElement, w: document.querySelector("#board").getBoundingClientRect().width, vw: innerWidth, vh: innerHeight, sw: document.documentElement.scrollWidth, label: document.querySelector(\'[data-act="full"]\').textContent, panelCovered: document.elementFromPoint(innerWidth - 20, innerHeight / 2).closest("#stage") !== null })');
+    console.log('  ' + vp.name + ': full ' + st.full + ', real full screen ' + st.real + ', board ' + Math.round(before) + ' -> ' + Math.round(st.w) + ' px in a ' + st.vw + 'x' + st.vh + ' view, covers the panel ' + st.panelCovered + ', button "' + st.label + '"');
+    await pg.waitForFunction('window.IG.game.nudge || (!window.IG.game.busy && window.IG.game.cfg.seats[window.IG.game.state.turn].kind === "human")', null, { timeout: 120000 });
+    await pg.click('.pit.playable'); await wait(pg, 80);
+    await t.shot(pg, 'full-' + vp.name);
+    await pg.click('.pit.sel'); await wait(pg, 300);
+    await pg.waitForFunction('!window.IG.game.busy || window.IG.game.nudge', null, { timeout: 300000 });
+    console.log('  ' + vp.name + ': played in full screen, moves ' + await G(pg, 'G.moves.length') + ', seeds ' + await G(pg, 'E.totalSeeds(G.state)'));
+    // a coach nudge must be answerable without leaving full screen
+    await pg.evaluate('window.IG.game.nudge = { text: "Test note." }; window.IG.bus.emit("game:update")'); await wait(pg, 100);
+    console.log('  ' + vp.name + ': coach note inside the stage: ' + await pg.isVisible('#stage-note .notice-coach'));
+    await pg.click('#stage-note [data-act="nudge-ok"]'); await wait(pg, 200);
+    await pg.click('[data-act="full"]'); await wait(pg, 400);
+    const out1 = await pg.evaluate('({ full: window.IG.ui.full, cls: document.querySelector("#stage").classList.contains("full"), toasts: document.querySelector("#toasts").parentNode === document.body })');
+    await pg.click('[data-act="full"]'); await wait(pg, 400);
+    await pg.keyboard.press('Escape'); await wait(pg, 400);
+    const out2 = await pg.evaluate('({ full: window.IG.ui.full, cls: document.querySelector("#stage").classList.contains("full") })');
+    console.log('  ' + vp.name + ': button exits ' + (!out1.full && !out1.cls && out1.toasts) + ', Escape exits ' + (!out2.full && !out2.cls));
+    if (!(await pg.evaluate('window.IG.ui.full'))) { await pg.click('[data-act="full"]'); await wait(pg, 300); }
+    await pg.click('[data-act="resign"]'); await wait(pg, 400);
+    console.log('  ' + vp.name + ': result shown in full screen: ' + await pg.isVisible('#stage-note [data-act="rematch"]') + ' ("' + (await pg.textContent('#stage-note .notice b')) + '")');
+    await pg.click('#stage-note [data-act="full"]'); await wait(pg, 300);
+    console.log('  ' + vp.name + ': back to the page: ' + !(await pg.evaluate('window.IG.ui.full')) + (pg.errors.length ? ' ERRORS ' + JSON.stringify(pg.errors) : ', no errors'));
+    await pg.close();
+  }
+};
