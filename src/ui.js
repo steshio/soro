@@ -9,13 +9,15 @@
   var IG = window.IG, E = window.IgisoroEngine, U = IG.util, G = IG.game, B = IG.board, V = IG.view, P = IG.progress, S = IG.settings, N = IG.net, L = IG.learn, Z = IG.puzzle;
   var esc = U.esc;
 
-  var UI = IG.ui = { mode: 'menu', route: 'home', sel: { table: 't1', level: 'beginner' }, last: null, score: [0, 0], confirm: null, board: null };
+  var UI = IG.ui = { full: false, mode: 'menu', route: 'home', sel: { table: 't1', level: 'beginner' }, last: null, score: [0, 0], confirm: null, board: null };
 
   var HORN = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 3.5C2.5 10 6 13 12 13s9.5-3 9.5-9.5c-1 4-4 6.3-6.9 6.5H9.4C6.5 9.800 3.500 7.500 2.500 3.500z"/><path d="M8.600 12.2h6.8l-1.700 7.300c-.7 1.500-2.700 1.500-3.400 0z"/></svg>';
   var ICON = {
     gear: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.500a3.500 3.500 0 1 0 0 7 3.500 3.500 0 0 0 0-7zm8.300 5.200.1-1.700-.1-1.700 2-1.500-2-3.500-2.400 1a8 8 0 0 0-2.900-1.700L14.600 2h-5.200l-.4 2.600A8 8 0 0 0 6.100 6.300l-2.400-1-2 3.500 2 1.500-.1 1.700.1 1.700-2 1.500 2 3.500 2.400-1a8 8 0 0 0 2.900 1.700l.4 2.600h5.200l.4-2.600a8 8 0 0 0 2.900-1.700l2.400 1 2-3.500z" fill="none" stroke="currentColor" stroke-width="1.700" stroke-linejoin="round"/></svg>',
     lock: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10V7.500a6 6 0 0 1 12 0V10h1.500v11h-15V10zm2.500 0h7V7.500a3.500 3.500 0 0 0-7 0z"/></svg>',
     check: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.500 9.500 18 20 6.500" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    expand: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    shrink: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     flame: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 4 5 5.500 5 11a5 5 0 0 1-10 0c0-2 1-3.500 2-4.500.2 2 1 3 2 3.500C10.500 9 11 5 12 2z"/></svg>'
   };
 
@@ -54,6 +56,7 @@
   /* leave whatever is running and return to the menus */
   UI.leave = function () {
     UI.confirm = null;
+    UI.setFull(false);
     IG.audio.ambience(null);
     if (UI.mode === 'lesson') L.exit();
     else if (UI.mode === 'puzzle') Z.exit();
@@ -167,7 +170,7 @@
     top.hidden = bot.hidden = !showPlates;
     if (showPlates) { bot.innerHTML = plate(cfg.bottom); top.innerHTML = plate(1 - cfg.bottom); }
     ctl.hidden = !active;
-    if (!active) return;
+    if (!active) { U.$('#stage-note').hidden = true; return; }
     var sp = S.get('speed'), h = '';
     h += '<div class="seg" role="group" aria-label="Animation speed">';
     [1, 2, 4].forEach(function (v) { h += '<button type="button" data-act="speed" data-v="' + v + '" aria-pressed="' + (sp === v) + '">' + v + '×</button>'; });
@@ -177,8 +180,53 @@
     if ((cfg.mode === 'ai' || cfg.mode === 'local') && !cfg.noPreview) h += '<button type="button" class="btn btn-small" data-act="hint"' + (humanTurn ? '' : ' disabled') + '>Hint</button>';
     if (cfg.coached && !cfg.solo) h += '<button type="button" class="btn btn-small" data-act="undo"' + (G.canUndo() && !G.over ? '' : ' disabled') + '>Undo</button>';
     if ((cfg.mode === 'ai' || cfg.mode === 'local' || cfg.mode === 'online') && !G.over) h += '<button type="button" class="btn btn-small btn-quiet" data-act="resign">Resign</button>';
+    if (canFull()) h += '<button type="button" class="btn btn-small" data-act="full" aria-pressed="' + UI.full + '">' + (UI.full ? ICON.shrink + 'Exit full screen' : ICON.expand + 'Full screen') + '</button>';
     ctl.innerHTML = h;
+    renderStageNote();
   }
+
+  /* ---- full screen: the board, plates and controls fill the screen -------------- */
+  function canFull() { return (UI.mode === 'game' || UI.mode === 'online') && G.cfg && !G.cfg.lesson; }
+  /* While full, the panel is out of sight, so anything that needs an answer shows inside the stage. */
+  function renderStageNote() {
+    var box = U.$('#stage-note'), h = '';
+    if (UI.full && G.cfg) {
+      h = confirmBox() + nudgeBlock();
+      if (G.over && G.result) {
+        var w = G.result.winner, me = UI.mode === 'online' ? N.seat : 0, two = G.cfg.mode === 'local';
+        var title = w === 'draw' ? 'Game annulled.' : two ? (w === 0 ? 'Bottom wins.' : 'Top wins.') : (w === me ? 'You won.' : 'You lost.');
+        h += '<div class="notice"><p><b>' + title + '</b></p><div class="row">' +
+          (UI.mode === 'online' ? '<button class="btn btn-small btn-primary" data-act="net-rematch"' + (N.wantsRematch(true) ? ' disabled' : '') + '>' + (N.wantsRematch(true) ? 'Waiting…' : N.wantsRematch(false) ? 'Accept rematch' : 'Rematch') + '</button>'
+            : '<button class="btn btn-small btn-primary" data-act="rematch">' + (G.cfg.stake ? 'Play again · ' + G.cfg.stake.fee + ' cows' : 'Rematch') + '</button>') +
+          '<button class="btn btn-small" data-act="full">Exit full screen</button></div></div>';
+      }
+    }
+    box.innerHTML = h; box.hidden = !h;
+  }
+  function markFull(on) {
+    var stage = U.$('#stage'), toasts = U.$('#toasts');
+    UI.full = !!on;
+    stage.classList.toggle('full', UI.full);
+    document.body.classList.toggle('stage-full', UI.full);
+    // toasts must sit inside the element that is full screen, or they are not drawn
+    if (UI.full) stage.appendChild(toasts); else document.body.appendChild(toasts);
+    renderStage();
+  }
+  UI.setFull = function (on) {
+    var stage = U.$('#stage'), doc = document;
+    var realEl = doc.fullscreenElement || doc.webkitFullscreenElement;
+    if (on) {
+      if (UI.full) return;
+      var req = stage.requestFullscreen || stage.webkitRequestFullscreen;
+      markFull(true);                       // the page-level fallback applies at once; real full screen is added where the browser allows it
+      if (req) { try { var pr = req.call(stage); if (pr && pr.catch) pr.catch(function () { }); } catch (e) { } }
+    } else {
+      if (!UI.full && !realEl) return;
+      if (realEl) { try { (doc.exitFullscreen || doc.webkitExitFullscreen).call(doc); } catch (e) { } }
+      markFull(false);
+    }
+  };
+  UI.toggleFull = function () { UI.setFull(!UI.full); };
 
   /* ========================================================================
      PANELS
@@ -589,6 +637,7 @@
       case 'net-rematch': N.rematch(); break;
       case 'net-invite': U.share(N.inviteText()).then(function (r) { IG.toast(r === 'failed' ? 'Could not copy. The code is ' + esc(N.code.toUpperCase()) + '.' : r === 'shared' ? 'Invitation shared.' : 'Invitation copied. Paste it into a chat.'); }); break;
       case 'settings': openSettings(); break;
+      case 'full': UI.toggleFull(); break;
     }
   }
 
@@ -624,7 +673,15 @@
       if (UI.mode !== 'menu') UI.leave();
       UI.route = r; UI.render();
     });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && UI.confirm) { UI.confirm = null; UI.render(); } });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (UI.confirm) { UI.confirm = null; UI.render(); }
+      else if (UI.full && U.$('#prompt').hidden) UI.setFull(false);
+    });
+    // Escape or the browser's own control ended real full screen: follow it
+    ['fullscreenchange', 'webkitfullscreenchange'].forEach(function (ev) {
+      document.addEventListener(ev, function () { if (!(document.fullscreenElement || document.webkitFullscreenElement) && UI.full) markFull(false); });
+    });
 
     ['game:start', 'game:update', 'game:end', 'panel', 'progress', 'plates'].forEach(function (ev) { IG.bus.on(ev, function () { UI.render(); }); });
     IG.bus.on('settings', function (k) { if (k === 'tilt') B.layout(); });
