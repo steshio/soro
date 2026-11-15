@@ -37,6 +37,7 @@ A record of the calls made in the first build (version 0.1.0, 15 November 2026),
 - The board is drawn on a transparent canvas over a CSS backdrop, so the surface follows the theme; the board's ground shadow is a soft texture plus the real shadow map for hands and seeds.
 - Counts are small chips at the lower right of each pit; an empty pit shows none.
 - Without WebGL the page falls back to a flat CSS board with counts and instant moves.
+- **Full screen** is offered in games against the computer, pass and play and online, not in lessons or puzzles, whose instructions live in the side panel. It uses the browser's full-screen mode where allowed and an in-page overlay otherwise (iPhone browsers, some app views). While full, the coach's note, leave confirmations and the result appear inside the stage.
 - Type: Young Serif for headings, Instrument Sans for the interface. One Imigongo zigzag rule under the header, triangles as step markers and bullets, geometric badge glyphs.
 
 ## Where the board does not match the reference photo

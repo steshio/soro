@@ -7,7 +7,7 @@ Single-page Igisoro (Rwandan mancala) game for SteshLabs. Read `README.md` first
 - `npm test`: engine and content suites. Must pass before any commit.
 - `npm run test:ai`: AI strength smoke test.
 - `npm run build`: writes `dist/igisoro.html`.
-- `npm run preview -- <scenario>`: headless Chromium against the built page. Scenarios: `shots`, `play`, `learn`, `more`, `flat`, `online`. Screenshots land in `.preview/` (ignored by git).
+- `npm run preview -- <scenario>`: headless Chromium against the built page. Scenarios: `shots`, `play`, `learn`, `more`, `flat`, `online`, `full`. Screenshots land in `.preview/` (ignored by git).
 
 ## Rules of the house
 

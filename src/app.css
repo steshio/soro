@@ -156,6 +156,16 @@ body.hide-counts .handchip, .board.no-counts .handchip { display: none; }
 .plate .stat:first-of-type { margin-left: auto; }
 .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; }
 .say { min-height: 1.5em; text-align: center; color: var(--ink-2); font-size: 14px; text-wrap: balance; }
+.stage-note { display: flex; flex-direction: column; gap: 8px; width: min(100%, 560px); margin: 0 auto; }
+
+/* full screen: the stage covers the page. The same rules serve real full screen and the in-page fallback. */
+.stage.full { position: fixed; inset: 0; z-index: 30; top: 0; background: var(--bg); justify-content: center; gap: 6px; overflow-y: auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 8px) max(12px, env(safe-area-inset-left, 0px)); }
+.stage.full .board { width: min(100%, calc((100vh - 190px) * 1.239)); width: min(100%, calc((100dvh - 190px) * 1.239)); max-width: none; margin: 0 auto; border-radius: 12px; }
+.stage.full .plate { width: min(100%, calc((100dvh - 190px) * 1.239)); margin: 0 auto; }
+.stage.full .toasts { z-index: 41; }
+body.stage-full { overflow: hidden; }
+.btn .ico { font-size: 15px; }
 
 .seg { display: inline-flex; border: 1.5px solid var(--line-2); border-radius: 9px; overflow: hidden; }
 .seg button { border: 0; background: transparent; padding: 6px 12px; font-weight: 600; font-size: 13px; color: var(--ink-2); min-height: 34px; }
@@ -339,6 +349,9 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
   .top-right { margin-left: auto; }
   .coach { font-size: 17px; }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stage.full { padding-left: 0; padding-right: 0; }
+  .stage.full .board { border-radius: 0; }
+  .stage.full .plate, .stage.full .controls, .stage.full .stage-note, .stage.full .say { padding-left: var(--gl); padding-right: var(--gr); }
 }
 @media (max-width: 900px) and (orientation: landscape) {
   .board { width: min(100%, calc((100dvh - 20px) * 1.239)); margin: 0 auto; border-radius: 12px; }
