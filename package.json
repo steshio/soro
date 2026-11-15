@@ -1,7 +1,7 @@
 {
   "name": "igisoro",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Igisoro, the Rwandan strategy game of seeds and cows, as a single-page web teaching game",
   "scripts": {
     "test": "node test/engine.test.js && node test/content.test.js",

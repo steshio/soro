@@ -26,6 +26,7 @@
   --tint-note: #efe9df;
   --fx: #f4d27e;
   --fx-cap: #ff8468;
+  --fx-alt: #9fe07c;
   --on-wood-bg: rgba(18, 10, 6, 0.74);
   --on-wood-fg: #f8eedb;
   --shadow: 0 10px 34px rgba(43, 26, 18, 0.18);
@@ -122,6 +123,7 @@ a { color: inherit; }
 .pit.dim::before { content: ""; position: absolute; inset: 7%; border-radius: 50%; background: rgba(16, 9, 6, 0.4); }
 .pit.mark { box-shadow: inset 0 0 0 3px var(--fx); }
 .pit.mark-warn { box-shadow: inset 0 0 0 3.5px var(--fx-cap); }
+.pit.mark-alt { box-shadow: inset 0 0 0 3.5px var(--fx-alt); }
 .pit.glow { box-shadow: inset 0 0 0 3px var(--fx), 0 0 16px 5px rgba(244, 210, 126, 0.6); animation: glow 1.3s ease-in-out infinite; }
 @keyframes glow { 50% { box-shadow: inset 0 0 0 3px var(--fx), 0 0 4px 1px rgba(244, 210, 126, 0.35); } }
 .pit:focus-visible { outline: 3px solid #fff; outline-offset: 1px; border-radius: 50%; box-shadow: 0 0 0 6px rgba(0, 0, 0, 0.55); }
@@ -158,6 +160,16 @@ body.hide-counts .handchip, .board.no-counts .handchip { display: none; }
 .plate .stat:first-of-type { margin-left: auto; }
 .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; }
 .say { min-height: 1.5em; text-align: center; color: var(--ink-2); font-size: 14px; text-wrap: balance; }
+.stage-note { display: flex; flex-direction: column; gap: 8px; width: min(100%, 560px); margin: 0 auto; }
+
+/* full screen: the stage covers the page. The same rules serve real full screen and the in-page fallback. */
+.stage.full { position: fixed; inset: 0; z-index: 30; top: 0; background: var(--bg); justify-content: center; gap: 6px; overflow-y: auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 8px) max(12px, env(safe-area-inset-left, 0px)); }
+.stage.full .board { width: min(100%, calc((100vh - 190px) * 1.239)); width: min(100%, calc((100dvh - 190px) * 1.239)); max-width: none; margin: 0 auto; border-radius: 12px; }
+.stage.full .plate { width: min(100%, calc((100dvh - 190px) * 1.239)); margin: 0 auto; }
+.stage.full .toasts { z-index: 41; }
+body.stage-full { overflow: hidden; }
+.btn .ico { font-size: 15px; }
 
 .seg { display: inline-flex; border: 1.5px solid var(--line-2); border-radius: 9px; overflow: hidden; }
 .seg button { border: 0; background: transparent; padding: 6px 12px; font-weight: 600; font-size: 13px; color: var(--ink-2); min-height: 34px; }
@@ -225,16 +237,14 @@ h3 { font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: 
 .lesson-row.next .lesson-meta { color: var(--brass); }
 
 /* ---- venues ---- */
-.ladder { position: relative; display: flex; flex-direction: column; gap: 6px; padding-left: 24px; }
-.ladder::before { content: ""; position: absolute; left: 7px; top: 22px; bottom: 22px; width: 2px; background: var(--line-2); }
-.venue { position: relative; border-radius: 10px; border: 1.5px solid var(--line); }
-.venue::before { content: ""; position: absolute; left: -22.5px; top: 19px; width: 11px; height: 11px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 3px var(--bg); }
-.venue.locked::before { background: var(--line-2); }
+.ladder { display: flex; flex-direction: column; gap: 6px; }
+.venue { border-radius: 10px; border: 1.5px solid var(--line); }
 .venue.sel { border-color: var(--brass); background: var(--surface); }
-.venue.sel::before { background: var(--brass); }
+.venue-n { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--chip); font-weight: 700; font-variant-numeric: tabular-nums; }
+.venue.sel .venue-n { background: var(--btn-bg); color: var(--btn-fg); }
 .venue-head { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 10px 12px; border: 0; background: transparent; border-radius: 10px; }
 .venue-name { flex: 1; min-width: 0; }
-.venue-name b { display: block; font: 400 18px/1.2 var(--font-display); }
+.venue-name b { display: block; font-size: 15px; }
 .venue-name small { color: var(--ink-3); font-size: 13px; }
 .venue-fee { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; font-size: 13.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .venue-fee .ico { color: var(--brass); }
@@ -343,6 +353,9 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
   .top-right { margin-left: auto; }
   .coach { font-size: 17px; }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stage.full { padding-left: 0; padding-right: 0; }
+  .stage.full .board { border-radius: 0; }
+  .stage.full .plate, .stage.full .controls, .stage.full .stage-note, .stage.full .say { padding-left: var(--gl); padding-right: var(--gr); }
 }
 @media (max-width: 900px) and (orientation: landscape) {
   .board { width: min(100%, calc((100dvh - 20px) * 1.239)); margin: 0 auto; border-radius: 12px; }
@@ -387,6 +400,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       </div>
       <div class="plate" id="plate-bottom" hidden></div>
       <div class="controls" id="controls" hidden></div>
+      <div class="stage-note" id="stage-note" hidden></div>
       <p class="say" id="say" role="status" aria-live="polite"></p>
     </section>
     <section class="panel" id="panel" aria-live="off"></section>
@@ -427,8 +441,9 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     seedsPerInnerPit: 4,           // default setup: inner rows filled, outer rows empty
     captureMode: 'forced',         // 'forced' | 'optional' (ndahise allowed)
     captureSowStart: 'afterOrigin',// 'afterOrigin' | 'origin': where the first captured seed goes
-    reverseSowing: true,           // kugarama from the reverse pits
-    reversePits: [0, 1, 14, 15],   // ugutwi (0,1) and nteba (14,15)
+    reverseSowing: true,           // guteba and kugarama: clockwise laps from the four special pits
+    ntebaPits: [0, 14],            // Nteba: outer leftmost, inner second from the left. Clockwise from here is guteba.
+    ngaramaPits: [7, 9],           // Ngarama: outer rightmost, inner second from the right. Clockwise from here is kugarama.
     openingNoCaptureMoves: 2,      // kuvuna + kwivunura cannot capture
     relaySowing: true,             // false only in the first Learn level
     maxDropsPerMove: 3000,         // house rule: longer moves are treated as endless
@@ -462,6 +477,17 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
   /** pit number 1..8 counted from the owner's own left */
   function pitNumber(i) { return i < 8 ? i + 1 : 16 - i; }
   function mod16(n) { return ((n % 16) + 16) % 16; }
+  /**
+   * Sowing is anticlockwise. The only exception: a lap lifted from a Nteba pit
+   * may be sown clockwise (guteba), and a lap lifted from an Ngarama pit may be
+   * sown clockwise (kugarama), when that lap captures.
+   * Returns 'guteba' | 'kugarama' | null for loop index i.
+   */
+  function reverseKind(rules, i) {
+    if (rules.ntebaPits.indexOf(i) >= 0) return 'guteba';
+    if (rules.ngaramaPits.indexOf(i) >= 0) return 'kugarama';
+    return null;
+  }
 
   /* ---- state ------------------------------------------------------------- */
   function newGame(rules, opts) {
@@ -513,7 +539,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
   /**
    * Plays one turn from `start` following `decisions` (strings consumed in
    * order, only where a real choice exists):
-   *   'ccw' | 'cw'    direction at a reverse pit (guteba | kugarama)
+   *   'ccw' | 'cw'    direction at a Nteba or Ngarama pit (normal | guteba or kugarama)
    *   'take' | 'pass' capture or ndahise, optional capture mode only
    *
    * Returns one of
@@ -537,7 +563,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     var seen = {};
     var origin = start;
 
-    function isRev(i) { return R.reversePits.indexOf(i) >= 0; }
+    function isRev(i) { return reverseKind(R, i) !== null; }
 
     /* Would a lap of n seeds, first seed into `first`, direction d, end in a
        direct capture? Assumes any lifted pit is already zeroed in `my`. */
@@ -549,7 +575,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     }
 
     function pending(type, pit, options, kind) {
-      return { status: 'pending', pending: { type: type, pit: pit, options: options, kind: kind, index: di },
+      return { status: 'pending', pending: { type: type, pit: pit, options: options, kind: kind, index: di, name: type === 'direction' ? reverseKind(R, pit) : null },
         my: my, op: op, events: ev, captured: captured };
     }
 
@@ -729,7 +755,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     newGame: newGame, cloneState: cloneState, totalSeeds: totalSeeds, mirror: mirror, hash: hash,
     playTurn: playTurn, enumerate: enumerate, legalMoves: legalMoves, childState: childState,
     settle: settle, applyMove: applyMove, replay: replay, sameMove: sameMove,
-    isInner: isInner, colOf: colOf, rowOf: rowOf, indexAt: indexAt, pitNumber: pitNumber, mod16: mod16
+    isInner: isInner, colOf: colOf, rowOf: rowOf, indexAt: indexAt, pitNumber: pitNumber, mod16: mod16, reverseKind: reverseKind
   };
 });
 
@@ -750,7 +776,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
 
   var WIN = 100000;
 
-  /* Named strengths. Venues can pass their own parameter object instead. */
+  /* Named strengths. Tables pass their own parameter object instead. */
   var LEVELS = {
     beginner:     { depth: 1, time: 120,  blunder: 0.38, noise: 14 },
     intermediate: { depth: 2, time: 350,  blunder: 0.10, noise: 5 },
@@ -898,7 +924,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       { type: 'say', text: 'The two rows nearest you are yours. Each hollow is a pit (icyuba). The small balls are seeds (ubusoro).' },
       { type: 'free', n: 5, pos: { my: 'std', op: 'std' },
         text: 'Tap one of your pits that holds at least 2 seeds. Tap it again to sow. Your hand drops one seed in each pit, anticlockwise.',
-        each: 'One seed per pit, anticlockwise. This direction is called guteba.',
+        each: 'One seed per pit, anticlockwise.',
         done: 'Good. That is sowing.' },
       { type: 'do', pos: { my: { 2: 3, 9: 5, 12: 2 }, op: 'std' }, goal: { type: 'endAt', pit: 5 }, glow: [5], answer: 2,
         text: 'Now aim. End your move in the glowing pit.',
@@ -970,26 +996,30 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       { type: 'recap', points: ['A column is exposed when both your pits in it hold seeds and the pit facing them is full.', 'Empty one of the two and the capture is off.', 'A player with no pit of 2 or more seeds loses.'] }
     ] },
 
-    { id: 'L5', title: 'Reverse captures', blurb: 'Four pits can sow the other way.', minutes: 2, rules: TRAD, steps: [
-      { type: 'say', pos: { my: { 15: 2, 13: 1, 4: 2, 6: 1 }, op: { 10: 2, 5: 2, 13: 1, 1: 2 } }, marks: [[0, 0], [0, 1], [0, 14], [0, 15]], markKind: 'on',
-        text: 'Your four leftmost pits are special. The inner two are called nteba, the outer two ugutwi. From these you may sow the other way.' },
-      { type: 'say', pos: { my: { 15: 2, 13: 1, 4: 2, 6: 1 }, op: { 10: 2, 5: 2, 13: 1, 1: 2 } }, marks: [[0, 0], [0, 1], [0, 14], [0, 15]], markKind: 'on',
-        text: 'Sowing anticlockwise is guteba, the normal way. Sowing clockwise is kugarama. You may choose it only when that lap captures straight away.' },
-      { type: 'do', pos: { my: { 15: 2, 13: 1, 4: 2, 6: 1 }, op: { 10: 2, 5: 2, 13: 1, 1: 2 } }, goal: { type: 'cw' }, glow: [15], only: [15], answer: 15, answerDecisions: ['cw'],
-        text: 'Sow from the glowing pit. When the hand stops and asks, choose kugarama.',
-        wrong: 'That was guteba. Try again and choose kugarama.',
-        right: 'A reverse capture. The cows were sown clockwise too, following the lap that took them.' },
-      { type: 'do', pos: { my: { 1: 1, 3: 1, 13: 3, 14: 3, 15: 2 }, op: { 0: 3, 2: 1, 3: 1, 4: 1, 7: 1, 8: 2, 9: 3, 11: 2, 12: 3, 14: 3 } },
-        goal: { type: 'minCaptured', n: 3 }, answer: 14, answerDecisions: ['cw'],
-        text: 'Find the reverse capture yourself. Only one of your pits offers it.',
-        wrong: 'No capture there. Try your leftmost pits, and choose kugarama when it is offered.',
+    { id: 'L5', title: 'Guteba and kugarama', blurb: 'Four special pits may sow the other way.', minutes: 3, rules: TRAD, steps: [
+      { type: 'say', pos: { my: { 14: 2, 12: 1, 4: 2, 6: 1 }, op: { 11: 2, 4: 2, 13: 1, 1: 2 } }, marks: [[0, 0, 'warn'], [0, 14, 'warn'], [0, 7, 'alt'], [0, 9, 'alt']],
+        text: 'Sowing goes anticlockwise. Four of your pits are the exception. On your left, the outer corner pit and the second inner pit are Nteba. On your right, the outer corner pit and the second inner pit are Ngarama.' },
+      { type: 'say', pos: { my: { 14: 2, 12: 1, 4: 2, 6: 1 }, op: { 11: 2, 4: 2, 13: 1, 1: 2 } }, marks: [[0, 0, 'warn'], [0, 14, 'warn'], [0, 7, 'alt'], [0, 9, 'alt']],
+        text: 'From a Nteba pit you may play guteba: sow clockwise instead. From an Ngarama pit the same move is called kugarama. Either is allowed only when that clockwise lap captures.' },
+      { type: 'do', pos: { my: { 14: 2, 12: 1, 4: 2, 6: 1 }, op: { 11: 2, 4: 2, 13: 1, 1: 2 } }, goal: { type: 'cw' }, glow: [14], only: [14], answer: 14, answerDecisions: ['cw'],
+        text: 'Sow from the glowing Nteba pit. When the hand stops and asks, choose guteba.',
+        wrong: 'That was the normal direction. Try again and choose guteba.',
+        right: 'Guteba. The cows were sown clockwise too, following the lap that took them.' },
+      { type: 'do', pos: { my: { 7: 9, 14: 1, 3: 2 }, op: { 9: 2, 6: 2, 12: 1, 0: 3 } }, goal: { type: 'cw' }, glow: [7], only: [7], answer: 7, answerDecisions: ['cw'],
+        text: 'Now the other side. This Ngarama pit holds 9 seeds: enough to travel back along your outer row and round into your inner row. Sow from it and choose kugarama.',
+        wrong: 'That was the normal direction. Try again and choose kugarama.',
+        right: 'Kugarama. Nine seeds went backwards and the last one captured.' },
+      { type: 'do', pos: { my: { 0: 3, 2: 3, 3: 3, 6: 3, 8: 2, 13: 2, 14: 3 }, op: { 1: 2, 4: 1, 5: 1, 6: 3, 10: 2, 13: 1, 14: 3 } },
+        goal: { type: 'minCaptured', n: 3 }, answer: 0, answerDecisions: ['cw'],
+        text: 'Find the reverse capture yourself. Only one of your special pits offers it.',
+        wrong: 'No capture there. Try your Nteba pits, and choose guteba when it is offered.',
         right: 'Found it. {captured} cows.' },
-      { type: 'do', pos: { my: { 1: 2, 3: 2, 6: 1, 8: 1, 12: 2, 13: 3, 15: 3 }, op: { 0: 3, 4: 3, 5: 1, 7: 1, 8: 1, 9: 3, 10: 1, 12: 3, 15: 2 } },
-        goal: { type: 'minCaptured', n: 5 }, answer: 1, answerDecisions: ['ccw'],
-        text: 'Kugarama is a choice, not a duty. One of your pits offers it here, but the normal direction wins more. Take the bigger herd.',
-        wrong: 'That took {captured} cows. One of your reverse pits, sown the normal way, takes 5.',
+      { type: 'do', pos: { my: { 3: 3, 7: 8, 11: 2, 15: 3 }, op: { 2: 3, 3: 2, 5: 2, 7: 1, 8: 3, 11: 2, 12: 1 } },
+        goal: { type: 'minCaptured', n: 7 }, answer: 7, answerDecisions: ['ccw'],
+        text: 'A reverse move is a choice, not a duty. Your big Ngarama pit offers kugarama here, but sowing it the normal way wins more. Take the bigger herd.',
+        wrong: 'That took {captured} cows. Sowing the big pit the normal way takes 7.',
         right: '{captured} cows. Always compare both directions before you choose.' },
-      { type: 'recap', points: ['Reverse pits: your two leftmost inner pits (nteba) and outer pits (ugutwi).', 'Kugarama is allowed only when that lap captures at once.', 'It is offered at the start of a move, and when a relay ends in a reverse pit.', 'Compare both directions before you choose.'] }
+      { type: 'recap', points: ['Nteba: your outer left corner pit and your second inner pit from the left. Clockwise from them is guteba.', 'Ngarama: your outer right corner pit and your second inner pit from the right. Clockwise from them is kugarama.', 'Both are allowed only when that clockwise lap captures.', 'They are offered at the start of a move, and when a relay ends in one of these pits.', 'Compare both directions before you choose.'] }
     ] },
 
     { id: 'L6', title: 'The full game', blurb: 'Opening, main phase, and your first win.', minutes: 5, rules: TRAD, steps: [
@@ -997,7 +1027,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       { type: 'say', pos: { my: 'std', op: 'std' }, text: 'Then comes the main phase, kubuguza. Captures are live. You win when your opponent has no pit of 2 or more seeds left. A win is one point (igitego).' },
       { type: 'say', pos: { my: 'std', op: 'std' }, text: 'Masters are known for never counting seeds. When you feel ready, switch off Show counts in Settings. That is Master mode.' },
       { type: 'play', text: 'Play a full game against the Beginner computer. The coach warns you when a move leaves cows exposed, and you can take moves back.' },
-      { type: 'recap', points: ['Two opening moves without captures, then kubuguza.', 'Win by leaving your opponent nothing to sow.', 'Next: climb the venues, or try the daily puzzle.'] }
+      { type: 'recap', points: ['Two opening moves without captures, then kubuguza.', 'Win by leaving your opponent nothing to sow.', 'Next: sit down at the tables, or try the daily puzzle.'] }
     ] }
   ];
 
@@ -2014,7 +2044,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       var now = ctx.currentTime;
       [294, 370, 440, 587].forEach(function (f, i) { tone(f, now + i * 0.11, 0.3, 0.17, 'triangle'); tone(f * 2, now + i * 0.11, 0.12, 0.04, 'sine'); });
     },
-    /* a quiet bed of air, coloured per venue. null stops it. */
+    /* a quiet bed of air, coloured per table. null stops it. */
     ambience: function (colour) {
       if (bed) { try { bed.g.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.6); bed.s.stop(ctx.currentTime + 0.7); } catch (e) {} bed = null; }
       if (!colour || !ensure()) return;
@@ -2231,7 +2261,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
 
 /* ===== progress.js ===== */
 /* ==========================================================================
-   PROGRESSION: XP, levels, cows, streaks, badges, venues, missions, cosmetics
+   PROGRESSION: XP, levels, cows, streaks, badges, tables, missions, cosmetics
    Personal progress is private to the viewer (db: data/users/<id>/profile,
    with browser storage as the fallback). Nothing here can be bought.
    ========================================================================== */
@@ -2245,19 +2275,21 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     { xp: 560, name: 'Tactician' }, { xp: 900, name: 'Strategist' }, { xp: 1400, name: 'Expert' }, { xp: 2100, name: 'Master' }
   ];
 
-  /* The venue ladder. TODO(founder): confirm the names; only Huye and Nyanza carry a description from the brief. */
-  var VENUES = [
-    { id: 'village', name: 'Home village', blurb: 'Where everyone starts.', fee: 5, level: 1, strength: 'Beginner', coached: true,
+  /* The table ladder against the computer: six steps, each with a bigger stake and a stronger opponent.
+     A table opens when the player has WON enough cows at the tables (`need`), not by XP.
+     TODO(founder): names for the six steps, after research with real players. Numbered for now. */
+  var TABLES = [
+    { id: 't1', name: 'Table 1', fee: 5, need: 0, strength: 'Beginner',
       ai: { depth: 1, time: 120, blunder: 0.38, noise: 14 }, tint: '#ffffff', air: 700, hue: 'a' },
-    { id: 'kigali', name: 'Kigali', blurb: '', fee: 15, level: 2, strength: 'Intermediate', coached: true,
+    { id: 't2', name: 'Table 2', fee: 15, need: 15, strength: 'Intermediate',
       ai: { depth: 2, time: 300, blunder: 0.12, noise: 6 }, tint: '#fff4ea', air: 1500, hue: 'b' },
-    { id: 'musanze', name: 'Musanze', blurb: '', fee: 30, level: 3, strength: 'Intermediate, fewer slips',
+    { id: 't3', name: 'Table 3', fee: 30, need: 60, strength: 'Intermediate, fewer slips',
       ai: { depth: 2, time: 350, blunder: 0.03, noise: 3 }, tint: '#f1f5ee', air: 500, hue: 'c' },
-    { id: 'rubavu', name: 'Rubavu', blurb: '', fee: 60, level: 4, strength: 'Strong',
+    { id: 't4', name: 'Table 4', fee: 60, need: 150, strength: 'Strong',
       ai: { depth: 3, time: 600, blunder: 0, noise: 2 }, tint: '#eef3f7', air: 1100, hue: 'd' },
-    { id: 'huye', name: 'Huye', blurb: 'Where the 2023 national final was held.', fee: 120, level: 5, strength: 'Strong, looks further ahead',
+    { id: 't5', name: 'Table 5', fee: 120, need: 330, strength: 'Strong, looks further ahead',
       ai: { depth: 4, time: 900, blunder: 0, noise: 1 }, tint: '#fbefe2', air: 900, hue: 'e' },
-    { id: 'nyanza', name: 'Nyanza', blurb: 'The old royal capital. The King’s court.', fee: 250, level: 6, strength: 'Master',
+    { id: 't6', name: 'Table 6', fee: 250, need: 690, strength: 'Master',
       ai: { depth: 12, time: 2400, blunder: 0, noise: 0 }, tint: '#f3e7d8', air: 380, hue: 'f' }
   ];
 
@@ -2265,10 +2297,10 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     { id: 'firstCapture', name: 'First capture', text: 'Capture cows for the first time.' },
     { id: 'firstWin', name: 'First win', text: 'Win a game.' },
     { id: 'chain3', name: 'Three in a row', text: 'Make three captures in one turn.' },
-    { id: 'firstReverse', name: 'Kugarama', text: 'Make a reverse capture.' },
-    { id: 'masterWin', name: 'Master table', text: 'Win with counts and previews switched off.' },
+    { id: 'firstReverse', name: 'Against the flow', text: 'Capture with guteba or kugarama.' },
+    { id: 'masterWin', name: 'Table win', text: 'Win at a table, played the way masters play.' },
     { id: 'streak7', name: 'Seven days', text: 'Play seven days in a row.' }
-  ].concat(VENUES.map(function (v) { return { id: 'venue_' + v.id, name: v.name, text: 'Take a seat at ' + v.name + '.' }; }));
+  ].concat(TABLES.map(function (v) { return { id: 'table_' + v.id, name: v.name, text: 'Take a seat at ' + v.name + '.' }; }));
 
   var COSMETICS = [
     { id: 'wood:walnut', kind: 'wood', name: 'Walnut board', level: 1 },
@@ -2296,15 +2328,15 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
 
   function fresh() {
     return { v: 1, xp: 0, cows: 50, rating: 1200, rated: 0, streak: { n: 0, day: '' }, best: 0, badges: {}, lessons: {},
-      stats: { games: 0, wins: 0, captures: 0, puzzles: 0 }, venues: {}, missions: { day: '', items: [] },
+      stats: { games: 0, wins: 0, captures: 0, puzzles: 0 }, won: 0, tables: {}, missions: { day: '', items: [] },
       login: { day: '', idx: 0 }, topup: '', daily: {}, look: { wood: 'walnut', seed: 'black', carve: false, bracelet: '' },
       ratedKeys: [], updatedAt: 0 };
   }
   function adopt(raw) {       // stored data is untrusted: copy known fields with type checks
     var d = fresh(); if (!raw || typeof raw !== 'object') return d;
-    ['xp', 'cows', 'rating', 'rated', 'best', 'updatedAt'].forEach(function (k) { if (typeof raw[k] === 'number' && isFinite(raw[k])) d[k] = Math.max(0, Math.round(raw[k])); });
+    ['xp', 'cows', 'rating', 'rated', 'best', 'won', 'updatedAt'].forEach(function (k) { if (typeof raw[k] === 'number' && isFinite(raw[k])) d[k] = Math.max(0, Math.round(raw[k])); });
     if (typeof raw.topup === 'string') d.topup = raw.topup.slice(0, 10);
-    ['badges', 'lessons', 'venues', 'daily', 'stats'].forEach(function (k) {
+    ['badges', 'lessons', 'tables', 'daily', 'stats'].forEach(function (k) {
       if (raw[k] && typeof raw[k] === 'object') for (var x in raw[k]) if (/^[\w:.-]{1,40}$/.test(x) && (typeof raw[k][x] === 'number' || typeof raw[k][x] === 'boolean')) d[k][x] = raw[k][x];
     });
     if (raw.streak && typeof raw.streak.n === 'number') d.streak = { n: Math.max(0, raw.streak.n | 0), day: String(raw.streak.day || '').slice(0, 10) };
@@ -2320,7 +2352,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     return d;
   }
 
-  var P = IG.progress = { LEVELS: LEVELS, VENUES: VENUES, BADGES: BADGES, COSMETICS: COSMETICS, LOGIN_TRACK: LOGIN_TRACK, MISSIONS: MISSIONS };
+  var P = IG.progress = { LEVELS: LEVELS, TABLES: TABLES, BADGES: BADGES, COSMETICS: COSMETICS, LOGIN_TRACK: LOGIN_TRACK, MISSIONS: MISSIONS };
   P.data = adopt(U.lsGet('igisoro.profile.v1', null));
 
   /* ---- storage ----------------------------------------------------------- */
@@ -2361,8 +2393,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     var before = P.level().n; P.data.xp += n;
     var after = P.level();
     if (after.n > before) {
-      var unlocked = COSMETICS.filter(function (c) { return c.level === after.n; }).map(function (c) { return c.name; })
-        .concat(VENUES.filter(function (v) { return v.level === after.n; }).map(function (v) { return v.name + ' venue'; }));
+      var unlocked = COSMETICS.filter(function (c) { return c.level === after.n; }).map(function (c) { return c.name; });
       IG.toast('<b>Level ' + after.n + ': ' + U.esc(after.name) + '</b>' + (unlocked.length ? '<span>Unlocked: ' + U.esc(unlocked.join(', ')) + '</span>' : ''), 'good');
       IG.audio.good();
     }
@@ -2398,7 +2429,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       d.missions = { day: today, items: picks.map(function (id) { return { id: id, n: 0, done: false }; }) };
       changed = true;
     }
-    if (d.cows < VENUES[0].fee && d.topup !== today) {
+    if (d.cows < TABLES[0].fee && d.topup !== today) {
       d.cows = 20; d.topup = today; changed = true;
       IG.toast('<b>Your herd was low.</b><span>Here are 20 cows to start again. One top-up a day.</span>');
     }
@@ -2441,8 +2472,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       if (d.won) {
         D.stats.wins++; badge('firstWin'); addXp(25);
         if (d.mode === 'ai') mission('win', 1);
-        if (d.venue) D.venues[d.venue] = (D.venues[d.venue] || 0) + 1;
-        if (d.table === 'master') badge('masterWin');
+        if (d.table) { D.tables[d.table] = (D.tables[d.table] || 0) + 1; badge('masterWin'); }
       }
     } else if (type === 'lesson') {
       touchStreak();
@@ -2456,16 +2486,24 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     save();
   };
 
-  /* ---- venues and stakes ---------------------------------------------------- */
-  P.venueOpen = function (v) { return P.level().n >= v.level; };
-  P.enterVenue = function (v) {
-    if (!P.venueOpen(v) || P.data.cows < v.fee) return false;
-    addCows(-v.fee); badge('venue_' + v.id); save();
+  /* ---- tables and stakes ----------------------------------------------------- */
+  /* a table opens once enough cows have been won at the tables */
+  P.tableOpen = function (v) { return P.data.won >= v.need; };
+  P.nextTable = function () { for (var k = 0; k < TABLES.length; k++) if (!P.tableOpen(TABLES[k])) return TABLES[k]; return null; };
+  P.enterTable = function (v) {
+    if (!P.tableOpen(v) || P.data.cows < v.fee) return false;
+    addCows(-v.fee); badge('table_' + v.id); save();
     return true;
   };
-  P.settleVenue = function (v, result) {       // 'win' | 'loss' | 'draw'
-    if (result === 'win') { addCows(v.fee * 2); IG.toast('<b>You take both entry fees</b><span>+' + (v.fee * 2) + ' cows</span>', 'good'); }
-    else if (result === 'draw') addCows(v.fee);
+  P.settleTable = function (v, result) {       // 'win' | 'loss' | 'draw'
+    if (result === 'win') {
+      var before = P.data.won;
+      addCows(v.fee * 2); P.data.won += v.fee;         // the stake comes back, the opponent's fee is what was won
+      IG.toast('<b>You take both entry fees</b><span>+' + (v.fee * 2) + ' cows</span>', 'good');
+      TABLES.forEach(function (t) {
+        if (t.need > before && t.need <= P.data.won) IG.toast('<b>' + U.esc(t.name) + ' is open</b><span>You have won ' + P.data.won + ' cows at the tables.</span>', 'good');
+      });
+    } else if (result === 'draw') addCows(v.fee);
     save();
   };
 
@@ -2623,6 +2661,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       b.classList.toggle('glow', !!B.glow[p + '-' + i]);
       b.classList.toggle('mark', !!B.marks[p + '-' + i]);
       b.classList.toggle('mark-warn', B.marks[p + '-' + i] === 'warn');
+      b.classList.toggle('mark-alt', B.marks[p + '-' + i] === 'alt');
       var owner = cfg.labels ? cfg.labels[p] : (p === 0 ? 'Bottom' : 'Top');
       var label = owner + ' ' + (i >= 8 ? 'inner' : 'outer') + ' pit ' + E.pitNumber(i) + ', ' + U.plural(n, 'seed');
       if (human && mine) label += playable ? ', can be sown' : ', ' + (why || 'cannot be sown').replace(/\.$/, '').toLowerCase();
@@ -2635,7 +2674,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     B.glow = {}; (list || []).forEach(function (x) { B.glow[x[0] + '-' + x[1]] = 1; }); B.refresh();
   };
   B.setMarks = function (list, kind) {
-    B.marks = {}; (list || []).forEach(function (x) { B.marks[x[0] + '-' + x[1]] = kind || 'on'; }); B.refresh();
+    B.marks = {}; (list || []).forEach(function (x) { B.marks[x[0] + '-' + x[1]] = x[2] || kind || 'on'; }); B.refresh();   // x = [seat, pit, kind?]
   };
 
   B.clearFx = function () { B.fx.innerHTML = ''; };
@@ -2679,8 +2718,10 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
   B.ask = function (pending, seat, options) {
     return new Promise(function (resolve) {
       var q = V.projectPit(seat, pending.pit), html = '';
+      // clockwise from a Nteba pit is guteba, from an Ngarama pit kugarama; the normal direction has no special name
+      var rev = pending.name === 'kugarama' ? 'Kugarama' : 'Guteba';
       var TEXT = {
-        ccw: ['Guteba', 'anticlockwise, the normal way'], cw: ['Kugarama', 'clockwise, for a capture'],
+        ccw: ['Normal way', 'anticlockwise'], cw: [rev, 'clockwise, to capture'],
         take: ['Kurasa', 'capture the cows'], pass: ['Ndahise', 'I pass, and relay']
       };
       html += '<p class="prompt-q">' + (pending.type === 'capture' ? 'Capture here?' : pending.kind === 'capsow' ? 'Sow the cows which way?' : 'Which way?') + '</p>';
@@ -2714,7 +2755,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
 
   /**
    * cfg: { mode, rules, seats:[{kind:'human'|'ai'|'remote'|'none', name, ai}], first, pits, ply, bottom,
-   *        solo, coached, noPreview, noCounts, hooks:{onMove,onEnd,onTurn,filterStart}, labels, title, stake, table, venue }
+   *        solo, coached, noPreview, noCounts, hooks:{onMove,onEnd,onTurn,filterStart}, labels, title, stake, table }
    */
   G.start = function (cfg) {
     G.gen++;
@@ -2879,10 +2920,13 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
   };
 
   function describe(seat, out) {
-    var first = out.events[0], relays = 0, cw = false;
-    out.events.forEach(function (e) { if (e.t === 'relay') relays++; if ((e.t === 'lift' || e.t === 'capsow') && e.dir === -1) cw = true; });
+    var first = out.events[0], relays = 0, cw = null;
+    out.events.forEach(function (e) {
+      if (e.t === 'relay') relays++;
+      if (cw === null && (e.t === 'lift' || e.t === 'capsow') && e.dir === -1) cw = E.reverseKind(G.cfg.rules, e.t === 'lift' ? e.pit : e.from) || 'a clockwise lap';
+    });
     var s = seatName(seat) + ' sowed ' + U.plural(first.n, 'seed') + ' from ' + (first.pit >= 8 ? 'inner' : 'outer') + ' pit ' + E.pitNumber(first.pit);
-    if (cw) s += ', turned clockwise';
+    if (cw) s += ', played ' + cw;
     if (relays) s += ', relayed ' + U.times(relays);
     if (out.captured) s += ', captured ' + U.plural(out.captured, 'cow');
     return s + '.';
@@ -3158,7 +3202,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
         IG.audio.good();
         if (L.lesson.id === 'L5' && IG.settings.get('rulesMode') === 'learn') {
           IG.settings.set('rulesMode', 'traditional');
-          IG.toast('<b>Rules mode: Traditional</b><span>Reverse sowing is now on in your games. Change it in Settings.</span>');
+          IG.toast('<b>Rules mode: Traditional</b><span>Guteba and kugarama are now on in your games. Change it in Settings.</span>');
         }
         break;
     }
@@ -3214,7 +3258,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     var step = L.step; if (!step) return;
     L.showAnswer = true;
     B.setGlow([[0, step.type === 'two' && L.phase === 0 ? step.first : step.answer]]);
-    L.msg = 'The glowing pit is the one.' + (step.answerDecisions ? ' Choose ' + (step.answerDecisions[0] === 'cw' ? 'kugarama' : 'guteba') + ' when asked.' : '');
+    L.msg = 'The glowing pit is the one.' + (step.answerDecisions ? ' Choose ' + (step.answerDecisions[0] === 'cw' ? (E.reverseKind(G.cfg.rules, step.answer) || 'the clockwise way') : 'the normal way') + ' when asked.' : '');
     L.status = 'note'; redraw();
   };
   L.exit = function () {
@@ -3689,13 +3733,15 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
   var IG = window.IG, E = window.IgisoroEngine, U = IG.util, G = IG.game, B = IG.board, V = IG.view, P = IG.progress, S = IG.settings, N = IG.net, L = IG.learn, Z = IG.puzzle;
   var esc = U.esc;
 
-  var UI = IG.ui = { mode: 'menu', route: 'home', sel: { venue: 'village', table: 'standard', level: 'beginner' }, last: null, score: [0, 0], confirm: null, board: null };
+  var UI = IG.ui = { full: false, mode: 'menu', route: 'home', sel: { table: 't1', level: 'beginner' }, last: null, score: [0, 0], confirm: null, board: null };
 
   var HORN = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 3.5C2.5 10 6 13 12 13s9.5-3 9.5-9.5c-1 4-4 6.3-6.9 6.5H9.4C6.5 9.800 3.500 7.500 2.500 3.500z"/><path d="M8.600 12.2h6.8l-1.700 7.300c-.7 1.500-2.700 1.500-3.400 0z"/></svg>';
   var ICON = {
     gear: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.500a3.500 3.500 0 1 0 0 7 3.500 3.500 0 0 0 0-7zm8.300 5.200.1-1.700-.1-1.700 2-1.500-2-3.500-2.400 1a8 8 0 0 0-2.900-1.700L14.600 2h-5.200l-.4 2.600A8 8 0 0 0 6.100 6.300l-2.400-1-2 3.500 2 1.500-.1 1.700.1 1.700-2 1.500 2 3.500 2.400-1a8 8 0 0 0 2.900 1.700l.4 2.600h5.200l.4-2.600a8 8 0 0 0 2.900-1.700l2.400 1 2-3.500z" fill="none" stroke="currentColor" stroke-width="1.700" stroke-linejoin="round"/></svg>',
     lock: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10V7.500a6 6 0 0 1 12 0V10h1.500v11h-15V10zm2.500 0h7V7.500a3.500 3.500 0 0 0-7 0z"/></svg>',
     check: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.500 9.500 18 20 6.500" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    expand: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    shrink: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     flame: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 4 5 5.500 5 11a5 5 0 0 1-10 0c0-2 1-3.500 2-4.500.2 2 1 3 2 3.500C10.500 9 11 5 12 2z"/></svg>'
   };
 
@@ -3734,6 +3780,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
   /* leave whatever is running and return to the menus */
   UI.leave = function () {
     UI.confirm = null;
+    UI.setFull(false);
     IG.audio.ambience(null);
     if (UI.mode === 'lesson') L.exit();
     else if (UI.mode === 'puzzle') Z.exit();
@@ -3775,21 +3822,21 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
   /* ---- starting games --------------------------------------------------------- */
   var LEVEL_NAMES = { beginner: 'Beginner', intermediate: 'Intermediate', strong: 'Strong', master: 'Master' };
   UI.startGame = function (o) {
-    var cfg, rules, tone = IG.TONES[S.get('tone')], tone2 = IG.TONES[S.get('tone2')];
+    var cfg, tone = IG.TONES[S.get('tone')], tone2 = IG.TONES[S.get('tone2')];
     UI.last = o;
     if (!o.rematch) UI.score = [0, 0];
     var first = o.first !== undefined ? o.first : (Math.random() < 0.5 ? 0 : 1);
     if (o.kind === 'local') {
       cfg = { mode: 'local', rules: S.rules(), first: first, bottom: 0, title: 'Pass and play', eyebrow: 'Two players, one device',
         seats: [{ kind: 'human', name: 'Bottom', tone: tone }, { kind: 'human', name: 'Top', tone: tone2 }], labels: ['Bottom', 'Top'] };
-    } else if (o.kind === 'venue') {
-      var v = P.VENUES.filter(function (x) { return x.id === o.venue; })[0];
-      if (!o.restored && !P.enterVenue(v)) { IG.toast('You need ' + v.fee + ' cows to sit at ' + esc(v.name) + '.'); return; }
-      rules = o.table === 'standard' ? S.rules() : E.makeRules({ reverseSowing: true });
-      cfg = { mode: 'ai', rules: rules, first: first, bottom: 0, stake: v, venue: v.id, table: o.table,
-        title: v.name, eyebrow: (o.table === 'master' ? 'Master table' : o.table === 'traditional' ? 'Traditional table' : 'Standard table') + ' · ' + v.fee + ' cows each',
+    } else if (o.kind === 'table') {
+      var v = P.TABLES.filter(function (x) { return x.id === o.table; })[0];
+      if (!o.restored && !P.enterTable(v)) { IG.toast('You need ' + v.fee + ' cows to sit at ' + esc(v.name) + '.'); return; }
+      // every table is played the way masters play: guteba and kugarama on, no counts, no preview, no coach
+      cfg = { mode: 'ai', rules: E.makeRules({ reverseSowing: true }), first: first, bottom: 0, stake: v, table: v.id,
+        title: v.name, eyebrow: v.fee + ' cows each · ' + v.strength + ' computer',
         seats: [{ kind: 'human', name: 'You', tone: tone }, { kind: 'ai', name: 'Computer', ai: v.ai, tone: tone2 }], labels: ['Your', 'Computer’s'],
-        coached: !!v.coached && o.table !== 'master', noPreview: o.table === 'master', noCounts: o.table === 'master' };
+        coached: false, noPreview: true, noCounts: true };
     } else {
       cfg = { mode: 'ai', rules: o.rules || S.rules(), first: first, bottom: 0, level: o.level, title: 'Practice', eyebrow: LEVEL_NAMES[o.level] + ' computer · no stake',
         seats: [{ kind: 'human', name: 'You', tone: tone }, { kind: 'ai', name: 'Computer', ai: o.level, tone: tone2 }], labels: ['Your', 'Computer’s'],
@@ -3799,8 +3846,8 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       onEnd: function (res) {
         var human = cfg.mode === 'ai', won = human && res.winner === 0, draw = res.winner === 'draw';
         if (res.winner === 0 || res.winner === 1) UI.score[res.winner]++;
-        if (cfg.stake) P.settleVenue(cfg.stake, draw ? 'draw' : won ? 'win' : 'loss');
-        P.event('gameEnd', { mode: cfg.mode, won: won, venue: cfg.venue, table: cfg.table });
+        if (cfg.stake) P.settleTable(cfg.stake, draw ? 'draw' : won ? 'win' : 'loss');
+        P.event('gameEnd', { mode: cfg.mode, won: won, table: cfg.table });
         if (won || cfg.mode === 'local') IG.audio.win();
         IG.audio.ambience(null);
         if (o.onEnd) o.onEnd(res);
@@ -3847,7 +3894,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     top.hidden = bot.hidden = !showPlates;
     if (showPlates) { bot.innerHTML = plate(cfg.bottom); top.innerHTML = plate(1 - cfg.bottom); }
     ctl.hidden = !active;
-    if (!active) return;
+    if (!active) { U.$('#stage-note').hidden = true; return; }
     var sp = S.get('speed'), h = '';
     h += '<div class="seg" role="group" aria-label="Animation speed">';
     [1, 2, 4].forEach(function (v) { h += '<button type="button" data-act="speed" data-v="' + v + '" aria-pressed="' + (sp === v) + '">' + v + '×</button>'; });
@@ -3857,8 +3904,53 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     if ((cfg.mode === 'ai' || cfg.mode === 'local') && !cfg.noPreview) h += '<button type="button" class="btn btn-small" data-act="hint"' + (humanTurn ? '' : ' disabled') + '>Hint</button>';
     if (cfg.coached && !cfg.solo) h += '<button type="button" class="btn btn-small" data-act="undo"' + (G.canUndo() && !G.over ? '' : ' disabled') + '>Undo</button>';
     if ((cfg.mode === 'ai' || cfg.mode === 'local' || cfg.mode === 'online') && !G.over) h += '<button type="button" class="btn btn-small btn-quiet" data-act="resign">Resign</button>';
+    if (canFull()) h += '<button type="button" class="btn btn-small" data-act="full" aria-pressed="' + UI.full + '">' + (UI.full ? ICON.shrink + 'Exit full screen' : ICON.expand + 'Full screen') + '</button>';
     ctl.innerHTML = h;
+    renderStageNote();
   }
+
+  /* ---- full screen: the board, plates and controls fill the screen -------------- */
+  function canFull() { return (UI.mode === 'game' || UI.mode === 'online') && G.cfg && !G.cfg.lesson; }
+  /* While full, the panel is out of sight, so anything that needs an answer shows inside the stage. */
+  function renderStageNote() {
+    var box = U.$('#stage-note'), h = '';
+    if (UI.full && G.cfg) {
+      h = confirmBox() + nudgeBlock();
+      if (G.over && G.result) {
+        var w = G.result.winner, me = UI.mode === 'online' ? N.seat : 0, two = G.cfg.mode === 'local';
+        var title = w === 'draw' ? 'Game annulled.' : two ? (w === 0 ? 'Bottom wins.' : 'Top wins.') : (w === me ? 'You won.' : 'You lost.');
+        h += '<div class="notice"><p><b>' + title + '</b></p><div class="row">' +
+          (UI.mode === 'online' ? '<button class="btn btn-small btn-primary" data-act="net-rematch"' + (N.wantsRematch(true) ? ' disabled' : '') + '>' + (N.wantsRematch(true) ? 'Waiting…' : N.wantsRematch(false) ? 'Accept rematch' : 'Rematch') + '</button>'
+            : '<button class="btn btn-small btn-primary" data-act="rematch">' + (G.cfg.stake ? 'Play again · ' + G.cfg.stake.fee + ' cows' : 'Rematch') + '</button>') +
+          '<button class="btn btn-small" data-act="full">Exit full screen</button></div></div>';
+      }
+    }
+    box.innerHTML = h; box.hidden = !h;
+  }
+  function markFull(on) {
+    var stage = U.$('#stage'), toasts = U.$('#toasts');
+    UI.full = !!on;
+    stage.classList.toggle('full', UI.full);
+    document.body.classList.toggle('stage-full', UI.full);
+    // toasts must sit inside the element that is full screen, or they are not drawn
+    if (UI.full) stage.appendChild(toasts); else document.body.appendChild(toasts);
+    renderStage();
+  }
+  UI.setFull = function (on) {
+    var stage = U.$('#stage'), doc = document;
+    var realEl = doc.fullscreenElement || doc.webkitFullscreenElement;
+    if (on) {
+      if (UI.full) return;
+      var req = stage.requestFullscreen || stage.webkitRequestFullscreen;
+      markFull(true);                       // the page-level fallback applies at once; real full screen is added where the browser allows it
+      if (req) { try { var pr = req.call(stage); if (pr && pr.catch) pr.catch(function () { }); } catch (e) { } }
+    } else {
+      if (!UI.full && !realEl) return;
+      if (realEl) { try { (doc.exitFullscreen || doc.webkitExitFullscreen).call(doc); } catch (e) { } }
+      markFull(false);
+    }
+  };
+  UI.toggleFull = function () { UI.setFull(!UI.full); };
 
   /* ========================================================================
      PANELS
@@ -3900,7 +3992,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     h += '<button class="btn btn-primary btn-big" data-act="learn-continue"><span>' + (doneN === 0 ? 'Learn to play' : next ? 'Continue learning' : 'Review the lessons') + '</span><small>' + (doneN === 0 ? 'About ten minutes, on the board' : next ? 'Next: ' + esc(next.title) : 'All seven levels done') + '</small></button>';
     h += '</div>';
     h += '<div class="tiles">';
-    h += '<button class="tile" data-act="nav" data-to="play"><b>Play the computer</b><span>Six venues, from the home village to Nyanza</span></button>';
+    h += '<button class="tile" data-act="nav" data-to="play"><b>Play the computer</b><span>Six tables, played for cows</span></button>';
     h += '<button class="tile" data-act="nav" data-to="online"><b>Play a friend online</b><span>Open a table and share its code</span></button>';
     h += '<button class="tile" data-act="local"><b>Pass and play</b><span>Two players on this device</span></button>';
     h += '<button class="tile" data-act="daily"><b>Daily puzzle #' + num + '</b><span>' + (solved ? 'Solved in ' + U.plural(solved, 'try', 'tries') : 'The same puzzle for everyone today') + '</span></button>';
@@ -3910,32 +4002,33 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
   }
 
   function panelPlay() {
-    var lv = P.level(), h = head('Play', 'Choose a table', 'Venues are played for cows: both players put in the entry fee and the winner takes both. Practice is free.');
-    h += '<section class="block"><h3>The road to Nyanza</h3><ol class="ladder">';
-    P.VENUES.forEach(function (v) {
-      var open = P.venueOpen(v), sel = UI.sel.venue === v.id && open, wins = P.data.venues[v.id] || 0;
+    var d = P.data, next = P.nextTable();
+    var h = head('Play', 'Choose a table', 'At the tables you play for cows: both sides put in the entry fee and the winner takes both.');
+    h += '<section class="block"><h3>Tables</h3>';
+    h += '<p class="muted">Table games are played the way masters play: guteba and kugarama on, no seed counts, no move preview, no coach. New to the game? Learn it or practise first.</p>';
+    var pick = P.TABLES.filter(function (v) { return v.id === UI.sel.table && P.tableOpen(v); })[0];
+    if (!pick) P.TABLES.forEach(function (v) { if (P.tableOpen(v)) pick = v; });
+    h += '<ol class="ladder">';
+    P.TABLES.forEach(function (v, n) {
+      var open = P.tableOpen(v), sel = open && pick === v, wins = d.tables[v.id] || 0;
       h += '<li class="venue' + (open ? '' : ' locked') + (sel ? ' sel' : '') + '">';
       h += '<button class="venue-head" data-act="venue" data-v="' + v.id + '"' + (open ? '' : ' disabled') + ' aria-expanded="' + sel + '">';
-      h += '<span class="venue-name"><b>' + esc(v.name) + '</b><small>' + (v.blurb ? esc(v.blurb) + ' ' : '') + 'Opponent: ' + esc(v.strength) + '.' + (wins ? ' ' + U.plural(wins, 'win') + '.' : '') + '</small></span>';
-      h += '<span class="venue-fee">' + (open ? v.fee + HORN : ICON.lock + 'Level ' + v.level) + '</span></button>';
+      h += '<span class="venue-n">' + (n + 1) + '</span>';
+      h += '<span class="venue-name"><b>' + esc(v.name) + '</b><small>Opponent: ' + esc(v.strength) + '.' + (wins ? ' ' + U.plural(wins, 'win') + '.' : '') + '</small></span>';
+      h += '<span class="venue-fee">' + (open ? v.fee + HORN : ICON.lock + 'Opens at ' + v.need + ' won') + '</span></button>';
+      if (!open && v === next) h += '<div class="venue-body"><div class="xp" role="img" aria-label="' + d.won + ' of ' + v.need + ' cows won"><i style="width:' + Math.round(100 * d.won / v.need) + '%"></i></div><p class="muted">' + d.won + ' of ' + v.need + ' cows won at the tables.</p></div>';
       if (sel) {
-        h += '<div class="venue-body"><div class="seg seg-wide" role="group" aria-label="Table">';
-        [['standard', 'Standard'], ['traditional', 'Traditional'], ['master', 'Master']].forEach(function (t) {
-          h += '<button type="button" data-act="table" data-v="' + t[0] + '" aria-pressed="' + (UI.sel.table === t[0]) + '">' + t[1] + '</button>';
-        });
-        h += '</div><p class="muted">' + (UI.sel.table === 'standard' ? 'Your rules from Settings (' + (S.get('reverseSowing') ? 'reverse sowing on' : 'no reverse sowing') + ').' :
-          UI.sel.table === 'traditional' ? 'Reverse sowing (kugarama) is on.' : 'Traditional rules with seed counts and move previews switched off.') + '</p>';
-        var can = P.data.cows >= v.fee;
-        h += '<button class="btn btn-primary" data-act="enter"' + (can ? '' : ' disabled') + '>Take a seat · ' + v.fee + ' cows</button>';
-        if (!can) h += '<p class="muted">You have ' + P.data.cows + ' cows. Win some in practice missions, puzzles or lessons, or come back tomorrow for the daily top-up.</p>';
+        var can = d.cows >= v.fee;
+        h += '<div class="venue-body"><button class="btn btn-primary" data-act="enter"' + (can ? '' : ' disabled') + '>Take a seat · ' + v.fee + ' cows</button>';
+        if (!can) h += '<p class="muted">You have ' + d.cows + ' cows. Earn more from lessons, puzzles and missions, or come back tomorrow for the daily top-up.</p>';
         h += '</div>';
       }
       h += '</li>';
     });
-    h += '</ol><p class="muted">You are level ' + lv.n + '. Higher venues open as you level up.</p></section>';
+    h += '</ol></section>';
     h += '<section class="block"><h3>Practice</h3><div class="seg seg-wide" role="group" aria-label="Computer level">';
     Object.keys(LEVEL_NAMES).forEach(function (k) { h += '<button type="button" data-act="level" data-v="' + k + '" aria-pressed="' + (UI.sel.level === k) + '">' + LEVEL_NAMES[k] + '</button>'; });
-    h += '</div><p class="muted">' + (UI.sel.level === 'beginner' || UI.sel.level === 'intermediate' ? 'Coached: you get a warning when a move leaves cows exposed, and you can undo.' : 'No coaching and no undo at this level.') + '</p>';
+    h += '</div><p class="muted">Free, with seed counts and move previews, by your rules from Settings. ' + (UI.sel.level === 'beginner' || UI.sel.level === 'intermediate' ? 'Coached: you get a warning when a move leaves cows exposed, and you can undo.' : 'No coaching and no undo at this level.') + '</p>';
     h += '<button class="btn" data-act="practice">Start a practice game</button></section>';
     h += '<section class="block"><h3>With people</h3><div class="row"><button class="btn" data-act="local">Pass and play</button><button class="btn" data-act="nav" data-to="online">Play a friend online</button></div></section>';
     return h;
@@ -4065,7 +4158,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
   function panelProgress() {
     var d = P.data, lv = P.level(), h = head('Progress', 'Level ' + lv.n + ': ' + esc(lv.name), '');
     h += '<div class="xp" role="img" aria-label="' + d.xp + ' XP"><i style="width:' + Math.round(lv.frac * 100) + '%"></i></div><p class="muted">' + d.xp + ' XP' + (lv.next ? ' · ' + (lv.next - d.xp) + ' to level ' + (lv.n + 1) : ' · top level') + '</p>';
-    h += '<dl class="stats"><div><dt>Herd</dt><dd>' + d.cows + HORN + '</dd></div><div><dt>Streak</dt><dd>' + U.plural(P.streak(), 'day') + '</dd></div><div><dt>Online rating</dt><dd>' + d.rating + '</dd></div><div><dt>Wins</dt><dd>' + d.stats.wins + ' of ' + d.stats.games + '</dd></div><div><dt>Cows captured</dt><dd>' + d.stats.captures + '</dd></div><div><dt>Puzzles</dt><dd>' + d.stats.puzzles + '</dd></div></dl>';
+    h += '<dl class="stats"><div><dt>Herd</dt><dd>' + d.cows + HORN + '</dd></div><div><dt>Streak</dt><dd>' + U.plural(P.streak(), 'day') + '</dd></div><div><dt>Online rating</dt><dd>' + d.rating + '</dd></div><div><dt>Won at tables</dt><dd>' + d.won + HORN + '</dd></div><div><dt>Wins</dt><dd>' + d.stats.wins + ' of ' + d.stats.games + '</dd></div><div><dt>Cows captured</dt><dd>' + d.stats.captures + '</dd></div><div><dt>Puzzles</dt><dd>' + d.stats.puzzles + '</dd></div></dl>';
     h += todayBlock();
     h += '<section class="block"><h3>Badges</h3><ul class="badges">';
     P.BADGES.forEach(function (b, n) { h += '<li class="' + (d.badges[b.id] ? 'got' : '') + '" title="' + esc(b.text) + '">' + badgeSvg(n) + '<b>' + esc(b.name) + '</b><small>' + esc(b.text) + '</small></li>'; });
@@ -4104,7 +4197,8 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     h += '<section class="block"><h3>Words used in this game</h3><dl class="glossary">';
     [['Igisoro / Ikibuguzo', 'The game and the board'], ['Kubuguza', 'Playing the game; the main phase'], ['Icyuba (ibyuba)', 'Pit (pits)'], ['Ubusoro', 'Seeds'], ['Inka', 'Cows; the seeds you capture'],
       ['Urunyana', 'Line of calves; a row of single seeds'], ['Kugereka', 'Placing the seeds at setup'], ['Guca umuvuno', 'The opening'], ['Kuvuna / Kwivunura', 'First move / second move of the opening'],
-      ['Kurasa', 'To capture'], ['Guteba', 'Sowing anticlockwise, the normal direction'], ['Kugarama', 'Sowing clockwise from a reverse pit, for a capture'], ['Nteba / Ugutwi', 'Reverse pits in the inner row / outer row'],
+      ['Kurasa', 'To capture'], ['Nteba', 'Your two special pits on the left: the outer corner pit and the second inner pit'], ['Guteba', 'Sowing clockwise from a Nteba pit, to capture'],
+      ['Ngarama', 'Your two special pits on the right: the outer corner pit and the second inner pit'], ['Kugarama', 'Sowing clockwise from an Ngarama pit, to capture'],
       ['Ndahise', 'I pass; declining a capture'], ['Ndakubye', 'I retreat; the opponent’s protective reply'], ['Gutanga inganji', 'The winner starts the next game'], ['Igitego', 'A point, one per game won']
     ].forEach(function (g) { h += '<div><dt>' + g[0] + '</dt><dd>' + g[1] + '</dd></div>'; });
     h += '</dl></section>';
@@ -4175,9 +4269,9 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       return '<label class="switch"><input type="checkbox" id="set-' + key + '" data-check="' + key + '"' + (on ? ' checked' : '') + '><span><b>' + label + '</b>' + (note ? '<small>' + note + '</small>' : '') + '</span></label>';
     }
     h += '<section><h3>Rules</h3>' + seg('rulesMode', [['learn', 'Learn'], ['traditional', 'Traditional']], d.rulesMode, 'Rules mode');
-    h += '<p class="muted">' + (d.rulesMode === 'learn' ? 'Forced capture, no reverse sowing. Best while you are learning.' : 'Forced capture, with reverse sowing (kugarama) from your four leftmost pits.') + '</p>';
+    h += '<p class="muted">' + (d.rulesMode === 'learn' ? 'Forced capture, no clockwise moves. Best while you are learning.' : 'Forced capture, with guteba and kugarama: clockwise moves from your Nteba and Ngarama pits.') + '</p>';
     h += '<details' + (UI.advOpen ? ' open' : '') + ' id="adv"><summary>Advanced rules</summary>';
-    h += toggle('reverseSowing', 'Reverse sowing', d.reverseSowing, 'Kugarama from the reverse pits, only when the lap captures.');
+    h += toggle('reverseSowing', 'Guteba and kugarama', d.reverseSowing, 'Sow clockwise from a Nteba or Ngarama pit, only when that lap captures.');
     h += toggle('optional', 'Optional capture', d.captureMode === 'optional', 'You may decline a capture by saying ndahise (I pass) and relay instead.');
     h += toggle('origin', 'Captured cows start in the origin pit', d.captureSowStart === 'origin', 'Off: the first cow goes into the pit after the one where the move began.');
     h += '</details><p class="muted">Rule changes apply to the next game you start.</p></section>';
@@ -4244,10 +4338,9 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       case 'puzzle-exit': UI.leave(); UI.go('puzzles'); break;
       case 'puzzle-show': Z.showSolution(); break;
       case 'puzzle-share': U.share(Z.shareText()).then(function (r) { IG.toast(r === 'failed' ? 'Could not copy. Select the card text below and copy it.' : r === 'shared' ? 'Shared.' : 'Result copied. Paste it anywhere.'); }); break;
-      case 'venue': UI.sel.venue = t.dataset.v; UI.render(); break;
-      case 'table': UI.sel.table = t.dataset.v; UI.render(); break;
+      case 'venue': UI.sel.table = t.dataset.v; UI.render(); break;
       case 'level': UI.sel.level = t.dataset.v; UI.render(); break;
-      case 'enter': UI.startGame({ kind: 'venue', venue: UI.sel.venue, table: UI.sel.table }); break;
+      case 'enter': var tb = P.TABLES.filter(function (v) { return v.id === UI.sel.table && P.tableOpen(v); })[0]; if (!tb) P.TABLES.forEach(function (v) { if (P.tableOpen(v)) tb = v; }); UI.startGame({ kind: 'table', table: tb.id }); break;
       case 'practice': UI.startGame({ kind: 'practice', level: UI.sel.level }); break;
       case 'local': if (UI.mode !== 'menu') UI.leave(); UI.startGame({ kind: 'local' }); break;
       case 'rematch': UI.rematch(); break;
@@ -4268,6 +4361,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       case 'net-rematch': N.rematch(); break;
       case 'net-invite': U.share(N.inviteText()).then(function (r) { IG.toast(r === 'failed' ? 'Could not copy. The code is ' + esc(N.code.toUpperCase()) + '.' : r === 'shared' ? 'Invitation shared.' : 'Invitation copied. Paste it into a chat.'); }); break;
       case 'settings': openSettings(); break;
+      case 'full': UI.toggleFull(); break;
     }
   }
 
@@ -4303,7 +4397,15 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       if (UI.mode !== 'menu') UI.leave();
       UI.route = r; UI.render();
     });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && UI.confirm) { UI.confirm = null; UI.render(); } });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (UI.confirm) { UI.confirm = null; UI.render(); }
+      else if (UI.full && U.$('#prompt').hidden) UI.setFull(false);
+    });
+    // Escape or the browser's own control ended real full screen: follow it
+    ['fullscreenchange', 'webkitfullscreenchange'].forEach(function (ev) {
+      document.addEventListener(ev, function () { if (!(document.fullscreenElement || document.webkitFullscreenElement) && UI.full) markFull(false); });
+    });
 
     ['game:start', 'game:update', 'game:end', 'panel', 'progress', 'plates'].forEach(function (ev) { IG.bus.on(ev, function () { UI.render(); }); });
     IG.bus.on('settings', function (k) { if (k === 'tilt') B.layout(); });
