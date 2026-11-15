@@ -33,7 +33,7 @@
     { id: 'firstCapture', name: 'First capture', text: 'Capture cows for the first time.' },
     { id: 'firstWin', name: 'First win', text: 'Win a game.' },
     { id: 'chain3', name: 'Three in a row', text: 'Make three captures in one turn.' },
-    { id: 'firstReverse', name: 'Kugarama', text: 'Make a reverse capture.' },
+    { id: 'firstReverse', name: 'Against the flow', text: 'Capture with guteba or kugarama.' },
     { id: 'masterWin', name: 'Master table', text: 'Win with counts and previews switched off.' },
     { id: 'streak7', name: 'Seven days', text: 'Play seven days in a row.' }
   ].concat(VENUES.map(function (v) { return { id: 'venue_' + v.id, name: v.name, text: 'Take a seat at ' + v.name + '.' }; }));
