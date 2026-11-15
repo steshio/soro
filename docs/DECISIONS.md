@@ -5,9 +5,10 @@ A record of the calls made in the first build (version 0.1.0, 15 November 2026),
 ## Product and scope
 
 - **Built:** every P0 item and every P1 item in the brief. **Not built:** all of P2 (move timer and clocks, weekly leagues and the country board, spectating, free setup, ndakubye, move history replay) and the friends list. Nothing unbuilt appears in a menu.
-- **Practice is separate from venues.** Practice games against the four computer levels are free and always available, so nobody is ever locked out. Venues are the staked ladder.
-- **Venues.** Entry fees 5, 15, 30, 60, 120, 250 cows; unlock at levels 1 to 6. Only Huye and Nyanza carry a description, taken from the brief. The other names carry strength only. Names are to be confirmed by the founder.
-- **Special tables** are a choice at each venue: Standard (your rules from Settings), Traditional (reverse sowing on), Master (Traditional, with counts and previews off).
+- **Practice is separate from the tables.** Practice games against the four computer levels are free, coached at the two lower levels, and always available, so nobody is ever locked out.
+- **Tables** (changed on the founder's review of the first build). Six numbered steps against the computer, with entry fees 5, 15, 30, 60, 120, 250 cows and rising strength. A table opens when the player has **won** enough cows at the tables: 0, 15, 60, 150, 330, 690, which is three wins at the table below. XP levels no longer gate play; they only unlock cosmetics.
+- **One kind of table.** The Standard, Traditional and Master variants are gone. Every table is played the way masters play: guteba and kugarama on, no seed counts, no move preview, no coach, no hint. Beginners are pointed to Learn and Practice.
+- **Names.** The place names of the first build (Home village, Kigali, Musanze, Rubavu, Huye, Nyanza) are removed. Tables are numbered until the founder names them from research with players (`TODO(founder)` in `src/progress.js`).
 - **Cows.** Start with 50. A herd below 5 is topped up to 20, once a day. The 7-day track pays 5, 5, 10, 10, 15, 15, 30 and does not reset when a day is missed.
 - **Rules mode** starts on Learn and switches itself to Traditional when level 5 (reverse captures) is completed.
 - **Online games default to 2× animation.** Friend games are untimed.

@@ -38,7 +38,7 @@ tap -> IG.game -> IgisoroEngine.playTurn / applyMove -> event log -> IG.view.pla
 | `game.js` | `IG.board` (32 pit buttons, counts, SVG preview, decision prompt) and `IG.game` (turn loop for every mode, coach, undo, hint) |
 | `learn.js` | `IG.learn` (lesson steps on the real board) and `IG.puzzle` |
 | `net.js` | `IG.net` (tables, live moves, presence, resync, rematch, rating) |
-| `progress.js` | `IG.progress` (profile, XP, cows, venues, missions, badges, cosmetics) |
+| `progress.js` | `IG.progress` (profile, XP, cows, tables, missions, badges, cosmetics) |
 | `ui.js` | `IG.ui` (routes, panels, settings dialog, starting games, boot) |
 | `core.js` | `IG.util`, `IG.bus`, `IG.settings`, `IG.caps`, `IG.ai`, `IG.toast` |
 
@@ -54,7 +54,7 @@ Seed positions inside a pit come from `makeSlots`: a greedy heap in which slot `
 
 | Mode | Notes |
 |---|---|
-| `ai` | practice (free) or a venue (staked). `coached` for Beginner and Intermediate. |
+| `ai` | practice (free, coached for Beginner and Intermediate) or a table (staked, played master-style: no counts, no preview, no coach) |
 | `local` | two humans, fixed board |
 | `online` | one human, one remote seat; the view flips so your rows are at the bottom |
 | `lesson`, `puzzle` | `solo`: the learner keeps the move, the runner decides what happens next |
@@ -65,7 +65,7 @@ Seed positions inside a pit come from `makeSlots`: a greedy heap in which slot `
 | What | Where | Shape |
 |---|---|---|
 | Settings | browser storage `igisoro.settings.v1` | rules mode and toggles, speed, counts, sound, theme, tilt, hand tones |
-| Profile | browser storage `igisoro.profile.v1`, mirrored to db `data/users/<id>/profile` (private to the viewer) | `xp, cows, rating, streak, badges, lessons, stats, venues, missions, login, daily, look, updatedAt` |
+| Profile | browser storage `igisoro.profile.v1`, mirrored to db `data/users/<id>/profile` (private to the viewer) | `xp, cows, won, rating, streak, badges, lessons, stats, tables, missions, login, daily, look, updatedAt` |
 | Public row | db `players/<id>` (all read, each writes their own) | `rating, games, wins, level, t` |
 | Table | db `tables/<code>` | `host, guest, first, rules, game, moves[{s,d}], hash, status, result, score, rematch, ratings` |
 

@@ -17,7 +17,7 @@ It ships as **one self-contained HTML page** (`dist/igisoro.html`). There is no 
 | Online with a friend: table codes, live moves, resync, resign, rematch | done, see "Not yet tested" |
 | Learn path: levels 0 to 6 on the real board, including guteba and kugarama | done |
 | Puzzles: generated, verified, daily puzzle, share card | done |
-| XP, levels, streaks, badges, cows, venue ladder, daily missions, 7-day track, cosmetics | done |
+| XP, levels, streaks, badges, cows, six staked tables that open by cows won, daily missions, 7-day track, cosmetics | done |
 | Online rating (Elo) and a small leaderboard, ghost hand presence, challenge links | done |
 | Move timer and clocks, weekly leagues, spectating, free setup (kugereka), ndakubye, replay | **not built** |
 
@@ -71,7 +71,7 @@ src/
   render.js        Three.js scene, IG.models (the art swap point), animation from the event log
   audio.js         synthesised sound
   core.js          utilities, settings, capability access, AI worker bridge
-  progress.js      XP, cows, venues, missions, badges, cosmetics, rating
+  progress.js      XP, cows, tables, missions, badges, cosmetics, rating
   game.js          board overlay (pit buttons, previews, prompts) and the turn controller
   learn.js         lesson runner and puzzle runner
   net.js           online tables over the db, room and user capabilities
