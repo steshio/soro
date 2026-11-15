@@ -79,43 +79,65 @@ console.log('Hand-built positions');
   eq(r.op[13], 3, 'blocked: opponent untouched');
 }
 
-/* 5. Reverse sowing is offered only when the clockwise lap captures. */
+/* 5. Guteba and kugarama: clockwise only from the Nteba (0, 14) and Ngarama (7, 9) pits, and only when the lap captures. */
 {
   const T = { reverseSowing: true };
-  // Pit 15 (nteba) holds 2. Clockwise: 14, 13. Pit 13 is occupied and faces opponent 10 and 5.
-  const s = pos({ 15: 2, 13: 1 }, { 10: 2, 5: 2, 0: 57 }, { rules: T });
-  const r = run(s, 15);
-  eq(r.status, 'pending', 'reverse: a choice is offered');
-  eq(r.pending.options, ['ccw', 'cw'], 'reverse: both directions listed');
-  const cw = run(s, 15, ['cw']);
-  eq(cw.status, 'done', 'reverse: clockwise completes');
-  eq(cw.captured, 4, 'reverse: clockwise lap captures');
-  eq(cw.events[0].dir, -1, 'reverse: lift is clockwise');
+  eq([E.RULES.ntebaPits, E.RULES.ngaramaPits], [[0, 14], [7, 9]], 'reverse: Nteba are pits 0 and 14, Ngarama are pits 7 and 9');
+  eq([0, 14, 7, 9, 1, 15, 8].map(i => E.reverseKind(E.RULES, i)), ['guteba', 'guteba', 'kugarama', 'kugarama', null, null, null], 'reverse: pit names');
+  // Guteba from pit 14 (Nteba, inner). 2 seeds clockwise: 13, 12. Pit 12 is occupied and faces opponent 11 and 4.
+  const s = pos({ 14: 2, 12: 1 }, { 11: 2, 4: 2, 0: 57 }, { rules: T });
+  const r = run(s, 14);
+  eq(r.status, 'pending', 'guteba: a choice is offered at a Nteba pit');
+  eq([r.pending.options, r.pending.name], [['ccw', 'cw'], 'guteba'], 'guteba: both directions listed, and the move is named');
+  const cw = run(s, 14, ['cw']);
+  eq(cw.status, 'done', 'guteba: clockwise completes');
+  eq(cw.captured, 4, 'guteba: clockwise lap captures');
+  eq(cw.events[0].dir, -1, 'guteba: lift is clockwise');
   const sow = cw.events.find(e => e.t === 'capsow');
-  eq(sow.dir, -1, 'reverse: cows are sown in the direction of the capturing lap');
-  const ccw = run(s, 15, ['ccw']);
-  eq(ccw.status, 'done', 'reverse: anticlockwise still allowed');
-  eq(ccw.captured, 0, 'reverse: anticlockwise does not capture here');
-  const mv = E.legalMoves(s).filter(m => m.start === 15).map(m => m.decisions.join(''));
-  eq(mv, ['ccw', 'cw'], 'reverse: legalMoves lists both sequences');
+  eq(sow.dir, -1, 'guteba: cows are sown in the direction of the capturing lap');
+  const ccw = run(s, 14, ['ccw']);
+  eq(ccw.status, 'done', 'guteba: the normal direction is still allowed');
+  eq(ccw.captured, 0, 'guteba: the normal direction does not capture here');
+  const mv = E.legalMoves(s).filter(m => m.start === 14).map(m => m.decisions.join(''));
+  eq(mv, ['ccw', 'cw'], 'guteba: legalMoves lists both sequences');
+  // Guteba from pit 0 (Nteba, outer corner). 3 seeds clockwise: 15, 14, 13.
+  const s0 = pos({ 0: 3, 13: 1 }, { 10: 2, 5: 2, 0: 56 }, { rules: T });
+  eq(run(s0, 0).status, 'pending', 'guteba: offered from the outer Nteba pit');
+  eq(run(s0, 0, ['cw']).captured, 4, 'guteba: from pit 0 round into the inner row');
 
-  // Same shape but the clockwise lap would not capture (opposite outer pit empty): no choice.
-  const s2 = pos({ 15: 2, 13: 1 }, { 10: 2, 5: 0, 0: 59 }, { rules: T });
-  const r2 = run(s2, 15);
+  // Kugarama from pit 7 (Ngarama, outer corner). 9 seeds clockwise: 6..0, 15, 14. Pit 14 is occupied and faces opponent 9 and 6.
+  const k = pos({ 7: 9, 14: 1 }, { 9: 2, 6: 3, 0: 49 }, { rules: T });
+  const kr = run(k, 7);
+  eq(kr.status, 'pending', 'kugarama: a choice is offered at an Ngarama pit');
+  eq(kr.pending.name, 'kugarama', 'kugarama: the move is named');
+  const kcw = run(k, 7, ['cw']);
+  eq([kcw.status, kcw.captured, kcw.events[0].dir], ['done', 5, -1], 'kugarama: clockwise along the outer row and into the inner row captures');
+  // Kugarama from pit 9 (Ngarama, inner). 10 seeds clockwise: 8, 7..0, 15. Pit 15 is occupied and faces opponent 8 and 7.
+  const k9 = pos({ 9: 10, 15: 1 }, { 8: 2, 7: 1, 0: 50 }, { rules: T });
+  eq(run(k9, 9).status, 'pending', 'kugarama: offered from the inner Ngarama pit');
+  eq(run(k9, 9, ['cw']).captured, 3, 'kugarama: from pit 9 captures');
+
+  // Same shape but the clockwise lap would not capture (facing outer pit empty): no choice.
+  const s2 = pos({ 14: 2, 12: 1 }, { 11: 2, 4: 0, 0: 59 }, { rules: T });
+  const r2 = run(s2, 14);
   eq(r2.status, 'done', 'reverse: no choice when clockwise would not capture');
   eq(r2.events[0].dir, 1, 'reverse: plays anticlockwise');
-  // Not from a non-reverse pit, even if a clockwise lap would capture.
-  const s3 = pos({ 12: 2, 10: 1 }, { 13: 2, 2: 2, 0: 57 }, { rules: T });
-  eq(run(s3, 12).status, 'done', 'reverse: only the four reverse pits offer it');
+  // Not from other pits, even when a clockwise lap would capture: 15 and 1 are ordinary pits.
+  const s3 = pos({ 15: 2, 13: 1 }, { 10: 2, 5: 2, 0: 57 }, { rules: T });
+  eq(run(s3, 15).status, 'done', 'reverse: pit 15 is not a special pit');
+  const s3b = pos({ 1: 4, 13: 1 }, { 10: 2, 5: 2, 0: 55 }, { rules: T });
+  eq(run(s3b, 1).status, 'done', 'reverse: pit 1 is not a special pit');
+  const s3c = pos({ 12: 2, 10: 1 }, { 13: 2, 2: 2, 0: 57 }, { rules: T });
+  eq(run(s3c, 12).status, 'done', 'reverse: only Nteba and Ngarama pits offer it');
   // Rule switched off: never offered.
-  const s4 = pos({ 15: 2, 13: 1 }, { 10: 2, 5: 2, 0: 57 }, { rules: { reverseSowing: false } });
-  eq(run(s4, 15).status, 'done', 'reverse: off in Learn rules');
-  // A relay that ends in a reverse pit also gets the choice.
-  // 2 seeds from 12 -> 13, 14. Pit 14 (nteba) holds 2 -> relay with 3: clockwise 13, 12, 11. Pit 11 holds 1 and faces 12 and 3.
+  const s4 = pos({ 14: 2, 12: 1 }, { 11: 2, 4: 2, 0: 57 }, { rules: { reverseSowing: false } });
+  eq(run(s4, 14).status, 'done', 'reverse: off in Learn rules');
+  // A relay that ends in a Nteba pit also gets the choice.
+  // 2 seeds from 12 -> 13, 14. Pit 14 holds 2 -> relay with 3: clockwise 13, 12, 11. Pit 11 holds 1 and faces 12 and 3.
   const s5 = pos({ 12: 2, 14: 2, 11: 1 }, { 12: 2, 3: 2, 0: 55 }, { rules: T });
   const r5 = run(s5, 12);
-  eq(r5.status, 'pending', 'reverse: offered when a relay lap ends in a reverse pit');
-  eq(r5.pending.pit, 14, 'reverse: the choice is at the relay pit');
+  eq(r5.status, 'pending', 'reverse: offered when a relay lap ends in a Nteba pit');
+  eq([r5.pending.pit, r5.pending.name], [14, 'guteba'], 'reverse: the choice is at the relay pit');
 }
 
 /* 6. Opening moves cannot capture. */
@@ -129,8 +151,8 @@ console.log('Hand-built positions');
   const s2 = pos({ 8: 2, 10: 1 }, { 13: 3, 2: 2, 0: 56 }, { ply: 2 });
   eq(run(s2, 8).captured, 5, 'opening: third move captures');
   // Clockwise sowing is never offered while captures are off.
-  const s3 = pos({ 15: 2, 13: 1 }, { 10: 2, 5: 2, 0: 57 }, { ply: 0, rules: { reverseSowing: true } });
-  eq(run(s3, 15).status, 'done', 'opening: no reverse choice');
+  const s3 = pos({ 14: 2, 12: 1 }, { 11: 2, 4: 2, 0: 57 }, { ply: 0, rules: { reverseSowing: true } });
+  eq(run(s3, 14).status, 'done', 'opening: no reverse choice');
 }
 
 /* 7. Optional capture: ndahise relays instead. */
@@ -284,7 +306,7 @@ console.log('Random self-play');
 /* 13. Symmetry on hand-built positions, including captures and reverse choices. */
 {
   const T = { reverseSowing: true };
-  const s = pos({ 15: 2, 13: 1, 3: 4 }, { 10: 2, 5: 2, 0: 53 }, { rules: T });
+  const s = pos({ 14: 2, 12: 1, 3: 4 }, { 11: 2, 4: 2, 0: 53 }, { rules: T });
   for (const m of E.legalMoves(s)) {
     const a = E.applyMove(s, m).state, b = E.applyMove(E.mirror(s), m).state;
     eq(E.hash(E.mirror(a)), E.hash(b), 'symmetry: move ' + m.start + ' [' + m.decisions.join(',') + ']');

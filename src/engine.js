@@ -26,8 +26,9 @@
     seedsPerInnerPit: 4,           // default setup: inner rows filled, outer rows empty
     captureMode: 'forced',         // 'forced' | 'optional' (ndahise allowed)
     captureSowStart: 'afterOrigin',// 'afterOrigin' | 'origin': where the first captured seed goes
-    reverseSowing: true,           // kugarama from the reverse pits
-    reversePits: [0, 1, 14, 15],   // ugutwi (0,1) and nteba (14,15)
+    reverseSowing: true,           // guteba and kugarama: clockwise laps from the four special pits
+    ntebaPits: [0, 14],            // Nteba: outer leftmost, inner second from the left. Clockwise from here is guteba.
+    ngaramaPits: [7, 9],           // Ngarama: outer rightmost, inner second from the right. Clockwise from here is kugarama.
     openingNoCaptureMoves: 2,      // kuvuna + kwivunura cannot capture
     relaySowing: true,             // false only in the first Learn level
     maxDropsPerMove: 3000,         // house rule: longer moves are treated as endless
@@ -61,6 +62,17 @@
   /** pit number 1..8 counted from the owner's own left */
   function pitNumber(i) { return i < 8 ? i + 1 : 16 - i; }
   function mod16(n) { return ((n % 16) + 16) % 16; }
+  /**
+   * Sowing is anticlockwise. The only exception: a lap lifted from a Nteba pit
+   * may be sown clockwise (guteba), and a lap lifted from an Ngarama pit may be
+   * sown clockwise (kugarama), when that lap captures.
+   * Returns 'guteba' | 'kugarama' | null for loop index i.
+   */
+  function reverseKind(rules, i) {
+    if (rules.ntebaPits.indexOf(i) >= 0) return 'guteba';
+    if (rules.ngaramaPits.indexOf(i) >= 0) return 'kugarama';
+    return null;
+  }
 
   /* ---- state ------------------------------------------------------------- */
   function newGame(rules, opts) {
@@ -112,7 +124,7 @@
   /**
    * Plays one turn from `start` following `decisions` (strings consumed in
    * order, only where a real choice exists):
-   *   'ccw' | 'cw'    direction at a reverse pit (guteba | kugarama)
+   *   'ccw' | 'cw'    direction at a Nteba or Ngarama pit (normal | guteba or kugarama)
    *   'take' | 'pass' capture or ndahise, optional capture mode only
    *
    * Returns one of
@@ -136,7 +148,7 @@
     var seen = {};
     var origin = start;
 
-    function isRev(i) { return R.reversePits.indexOf(i) >= 0; }
+    function isRev(i) { return reverseKind(R, i) !== null; }
 
     /* Would a lap of n seeds, first seed into `first`, direction d, end in a
        direct capture? Assumes any lifted pit is already zeroed in `my`. */
@@ -148,7 +160,7 @@
     }
 
     function pending(type, pit, options, kind) {
-      return { status: 'pending', pending: { type: type, pit: pit, options: options, kind: kind, index: di },
+      return { status: 'pending', pending: { type: type, pit: pit, options: options, kind: kind, index: di, name: type === 'direction' ? reverseKind(R, pit) : null },
         my: my, op: op, events: ev, captured: captured };
     }
 
@@ -328,6 +340,6 @@
     newGame: newGame, cloneState: cloneState, totalSeeds: totalSeeds, mirror: mirror, hash: hash,
     playTurn: playTurn, enumerate: enumerate, legalMoves: legalMoves, childState: childState,
     settle: settle, applyMove: applyMove, replay: replay, sameMove: sameMove,
-    isInner: isInner, colOf: colOf, rowOf: rowOf, indexAt: indexAt, pitNumber: pitNumber, mod16: mod16
+    isInner: isInner, colOf: colOf, rowOf: rowOf, indexAt: indexAt, pitNumber: pitNumber, mod16: mod16, reverseKind: reverseKind
   };
 });
