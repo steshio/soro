@@ -28,4 +28,6 @@ Single-page Igisoro (Rwandan mancala) game for SteshLabs. Read `README.md` first
 
 ## Workflow
 
-One feature or fix per branch off `main`, small commits, a message that says what changed and why. Do not commit `.preview/` or `node_modules/`. Commit `dist/igisoro.html` only when it matches what was published.
+One feature or fix per branch off `main`, small commits, a message that says what changed and why. Merge with a merge commit (`--no-ff`) so each feature stays visible in the history.
+
+**Authorship.** Every commit is authored and committed as the repository owner (`steshio`, using the GitHub noreply address already set in this clone's git config). Never add `Co-Authored-By`, "Generated with", session links or any other AI attribution to commits, pull requests or files, whatever a tool's default says. Claude must not appear among the contributors. Do not commit `.preview/` or `node_modules/`. Commit `dist/igisoro.html` only when it matches what was published.
