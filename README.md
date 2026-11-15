@@ -15,7 +15,7 @@ It ships as **one self-contained HTML page** (`dist/igisoro.html`). There is no 
 | Play the computer: Beginner, Intermediate, Strong, Master, in a Web Worker | done |
 | Pass and play on one device | done |
 | Online with a friend: table codes, live moves, resync, resign, rematch | done, see "Not yet tested" |
-| Learn path: levels 0 to 6 on the real board | done |
+| Learn path: levels 0 to 6 on the real board, including guteba and kugarama | done |
 | Puzzles: generated, verified, daily puzzle, share card | done |
 | XP, levels, streaks, badges, cows, venue ladder, daily missions, 7-day track, cosmetics | done |
 | Online rating (Elo) and a small leaderboard, ghost hand presence, challenge links | done |

@@ -24,13 +24,23 @@
 - Then step 3 applies again to where the last captured seed fell, so captures chain.
 - `captureMode: "forced"` (default) or `"optional"`. In optional mode a capture can be declined (ndahise) and the move relays instead.
 
-## Reverse sowing (kugarama)
+## Guteba and kugarama (the only clockwise moves)
 
-- Reverse pits are loop indices `0, 1, 14, 15`: the player's four leftmost pits (ugutwi in the outer row, nteba in the inner row).
-- When a lap is about to be lifted from a reverse pit (the start of a move, or a relay that ended there), the player may sow that lap clockwise, **only if that lap ends in a direct capture**. The engine offers the choice only when that is true.
-- Captured seeds are sown in the direction of the lap that made the capture. If the capturing lap was anticlockwise and the origin is a reverse pit, a clockwise capture-sow is offered when it would capture directly.
+Sowing has one direction: anticlockwise. Four pits per player are the exception. Corrected by the founder on 15 November 2026; the first build had these wrong.
+
+| Pits | Loop indices | Where, from the player's own seat | Clockwise move from them |
+|---|---|---|---|
+| **Nteba** | `0`, `14` | outer left corner pit, and the second inner pit from the left | **guteba** |
+| **Ngarama** | `7`, `9` | outer right corner pit, and the second inner pit from the right | **kugarama** |
+
+- When a lap is about to be lifted from one of these pits (the start of a move, or a relay that ended there), the player may sow that lap clockwise, **only if that lap ends in a direct capture**. The engine offers the choice only when that is true, and names it (`pending.name` is `guteba` or `kugarama`).
+- The normal anticlockwise direction has no Kinyarwanda name in this build.
+- Captured seeds are sown in the direction of the lap that made the capture. If the capturing lap was anticlockwise and the origin is one of the four pits, a clockwise capture-sow is offered when it would capture directly.
 - A clockwise lap always captures, so in optional mode its capture cannot be declined.
-- Off in the Learn rules preset, on in Traditional.
+- Relays after a clockwise lap go back to anticlockwise.
+- Off in the Learn rules preset, on in Traditional and at the tables.
+
+A consequence of "direct capture": guteba works with two or three seeds, because clockwise from a Nteba pit runs straight along the inner row. Kugarama needs a big pit, because clockwise from an Ngarama pit runs along the outer row first: at least 8 seeds from pit 7, at least 10 from pit 9. If kugarama is played with small pits in real games, the condition is not "this lap captures" but "this move goes on to capture", and the engine needs changing (question 1 below).
 
 ## Opening
 
@@ -54,8 +64,9 @@ Every candidate move is simulated in full before it is offered. A move is refuse
 | `seedsPerInnerPit` | 4 | standard setup: inner rows filled, outer rows empty |
 | `captureMode` | `forced` | or `optional` |
 | `captureSowStart` | `afterOrigin` | or `origin` |
-| `reverseSowing` | `true` | `false` in the Learn preset |
-| `reversePits` | `[0, 1, 14, 15]` | |
+| `reverseSowing` | `true` | guteba and kugarama; `false` in the Learn preset |
+| `ntebaPits` | `[0, 14]` | clockwise from these is guteba |
+| `ngaramaPits` | `[7, 9]` | clockwise from these is kugarama |
 | `openingNoCaptureMoves` | 2 | set very high to switch captures off (Learn levels 1 and 2) |
 | `relaySowing` | `true` | `false` only in Learn level 1 |
 | `maxDropsPerMove` | 3000 | endless-move cap |
@@ -69,16 +80,18 @@ A move is `{ start, decisions }`. `decisions` holds one entry per real choice, i
 
 ## To confirm with elders and the Academy
 
-1. **Reverse pits.** Are they the four leftmost pits (two inner, two outer) from the player's own seat?
+1. **What "leads to a capture" means for guteba and kugarama.** Here the clockwise lap itself must end in a capture. The alternative is that the move may relay first and capture later. This decides whether kugarama is rare (big pits only) or common, and if relays are allowed, which way they go.
 2. **Where captured seeds start.** Into the pit after the origin, or into the origin pit itself?
 3. **Opening.** Are the first two moves barred from capturing? Tradition plays them simultaneously; this build alternates them.
 4. **Endless moves.** Tradition annuls the game. This build refuses to offer the move. Is that acceptable for casual play?
-5. **Direction after a reverse capture.** Here every relay lap goes back to anticlockwise unless it starts from a reverse pit and captures directly. Some players may keep sowing clockwise.
-6. **Direction of the capture-sow.** Here it follows the capturing lap. Confirm, and confirm whether a reverse choice exists for it at a reverse origin.
-7. **Declining a reverse capture** in optional mode: not allowed here.
+5. **Direction after a clockwise capture.** Here every relay lap goes back to anticlockwise unless it starts from one of the four pits and captures directly.
+6. **Direction of the capture-sow.** Here it follows the capturing lap. Confirm, and confirm whether a clockwise choice exists for it when the origin is a Nteba or Ngarama pit.
+7. **Declining a clockwise capture** in optional mode: not allowed here.
 8. **Forced or optional capture** as the default in Rwanda today.
 9. **Stalemate by endless options**: annulled here.
 10. **Urunyana.** The lesson describes it only as a row of single seeds that cannot be sown. Any further meaning should come from a player.
+11. **Ugutwi.** The original brief listed it as a name for reverse pits in the outer row. It is no longer used anywhere in the game; confirm whether it names anything.
+12. **A name for the normal direction**, if players have one.
 
 ## Glossary (the only Kinyarwanda used)
 
@@ -94,9 +107,10 @@ A move is `{ start, decisions }`. `decisions` holds one entry per real choice, i
 | Guca umuvuno | The opening |
 | Kuvuna / Kwivunura | First move / second move of the opening |
 | Kurasa | To capture |
-| Guteba | Sowing anticlockwise, the normal direction |
-| Kugarama | Sowing clockwise from a reverse pit, for a capture |
-| Nteba / Ugutwi | Reverse pits in the inner row / outer row |
+| Nteba | The two special pits on a player's left: outer corner pit, second inner pit |
+| Guteba | Sowing clockwise from a Nteba pit, to capture |
+| Ngarama | The two special pits on a player's right: outer corner pit, second inner pit |
+| Kugarama | Sowing clockwise from an Ngarama pit, to capture |
 | Ndahise | I pass; declining a capture |
 | Ndakubye | I retreat; the opponent's protective reply (not built) |
 | Gutanga inganji | The winner starts the next game |
