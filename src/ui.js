@@ -9,7 +9,7 @@
   var IG = window.IG, E = window.IgisoroEngine, U = IG.util, G = IG.game, B = IG.board, V = IG.view, P = IG.progress, S = IG.settings, N = IG.net, L = IG.learn, Z = IG.puzzle;
   var esc = U.esc;
 
-  var UI = IG.ui = { mode: 'menu', route: 'home', sel: { venue: 'village', table: 'standard', level: 'beginner' }, last: null, score: [0, 0], confirm: null, board: null };
+  var UI = IG.ui = { mode: 'menu', route: 'home', sel: { table: 't1', level: 'beginner' }, last: null, score: [0, 0], confirm: null, board: null };
 
   var HORN = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 3.5C2.5 10 6 13 12 13s9.5-3 9.5-9.5c-1 4-4 6.3-6.9 6.5H9.4C6.5 9.800 3.500 7.500 2.500 3.500z"/><path d="M8.600 12.2h6.8l-1.700 7.300c-.7 1.500-2.700 1.500-3.400 0z"/></svg>';
   var ICON = {
@@ -95,21 +95,21 @@
   /* ---- starting games --------------------------------------------------------- */
   var LEVEL_NAMES = { beginner: 'Beginner', intermediate: 'Intermediate', strong: 'Strong', master: 'Master' };
   UI.startGame = function (o) {
-    var cfg, rules, tone = IG.TONES[S.get('tone')], tone2 = IG.TONES[S.get('tone2')];
+    var cfg, tone = IG.TONES[S.get('tone')], tone2 = IG.TONES[S.get('tone2')];
     UI.last = o;
     if (!o.rematch) UI.score = [0, 0];
     var first = o.first !== undefined ? o.first : (Math.random() < 0.5 ? 0 : 1);
     if (o.kind === 'local') {
       cfg = { mode: 'local', rules: S.rules(), first: first, bottom: 0, title: 'Pass and play', eyebrow: 'Two players, one device',
         seats: [{ kind: 'human', name: 'Bottom', tone: tone }, { kind: 'human', name: 'Top', tone: tone2 }], labels: ['Bottom', 'Top'] };
-    } else if (o.kind === 'venue') {
-      var v = P.VENUES.filter(function (x) { return x.id === o.venue; })[0];
-      if (!o.restored && !P.enterVenue(v)) { IG.toast('You need ' + v.fee + ' cows to sit at ' + esc(v.name) + '.'); return; }
-      rules = o.table === 'standard' ? S.rules() : E.makeRules({ reverseSowing: true });
-      cfg = { mode: 'ai', rules: rules, first: first, bottom: 0, stake: v, venue: v.id, table: o.table,
-        title: v.name, eyebrow: (o.table === 'master' ? 'Master table' : o.table === 'traditional' ? 'Traditional table' : 'Standard table') + ' · ' + v.fee + ' cows each',
+    } else if (o.kind === 'table') {
+      var v = P.TABLES.filter(function (x) { return x.id === o.table; })[0];
+      if (!o.restored && !P.enterTable(v)) { IG.toast('You need ' + v.fee + ' cows to sit at ' + esc(v.name) + '.'); return; }
+      // every table is played the way masters play: guteba and kugarama on, no counts, no preview, no coach
+      cfg = { mode: 'ai', rules: E.makeRules({ reverseSowing: true }), first: first, bottom: 0, stake: v, table: v.id,
+        title: v.name, eyebrow: v.fee + ' cows each · ' + v.strength + ' computer',
         seats: [{ kind: 'human', name: 'You', tone: tone }, { kind: 'ai', name: 'Computer', ai: v.ai, tone: tone2 }], labels: ['Your', 'Computer’s'],
-        coached: !!v.coached && o.table !== 'master', noPreview: o.table === 'master', noCounts: o.table === 'master' };
+        coached: false, noPreview: true, noCounts: true };
     } else {
       cfg = { mode: 'ai', rules: o.rules || S.rules(), first: first, bottom: 0, level: o.level, title: 'Practice', eyebrow: LEVEL_NAMES[o.level] + ' computer · no stake',
         seats: [{ kind: 'human', name: 'You', tone: tone }, { kind: 'ai', name: 'Computer', ai: o.level, tone: tone2 }], labels: ['Your', 'Computer’s'],
@@ -119,8 +119,8 @@
       onEnd: function (res) {
         var human = cfg.mode === 'ai', won = human && res.winner === 0, draw = res.winner === 'draw';
         if (res.winner === 0 || res.winner === 1) UI.score[res.winner]++;
-        if (cfg.stake) P.settleVenue(cfg.stake, draw ? 'draw' : won ? 'win' : 'loss');
-        P.event('gameEnd', { mode: cfg.mode, won: won, venue: cfg.venue, table: cfg.table });
+        if (cfg.stake) P.settleTable(cfg.stake, draw ? 'draw' : won ? 'win' : 'loss');
+        P.event('gameEnd', { mode: cfg.mode, won: won, table: cfg.table });
         if (won || cfg.mode === 'local') IG.audio.win();
         IG.audio.ambience(null);
         if (o.onEnd) o.onEnd(res);
@@ -220,7 +220,7 @@
     h += '<button class="btn btn-primary btn-big" data-act="learn-continue"><span>' + (doneN === 0 ? 'Learn to play' : next ? 'Continue learning' : 'Review the lessons') + '</span><small>' + (doneN === 0 ? 'About ten minutes, on the board' : next ? 'Next: ' + esc(next.title) : 'All seven levels done') + '</small></button>';
     h += '</div>';
     h += '<div class="tiles">';
-    h += '<button class="tile" data-act="nav" data-to="play"><b>Play the computer</b><span>Six venues, from the home village to Nyanza</span></button>';
+    h += '<button class="tile" data-act="nav" data-to="play"><b>Play the computer</b><span>Six tables, played for cows</span></button>';
     h += '<button class="tile" data-act="nav" data-to="online"><b>Play a friend online</b><span>Open a table and share its code</span></button>';
     h += '<button class="tile" data-act="local"><b>Pass and play</b><span>Two players on this device</span></button>';
     h += '<button class="tile" data-act="daily"><b>Daily puzzle #' + num + '</b><span>' + (solved ? 'Solved in ' + U.plural(solved, 'try', 'tries') : 'The same puzzle for everyone today') + '</span></button>';
@@ -230,32 +230,33 @@
   }
 
   function panelPlay() {
-    var lv = P.level(), h = head('Play', 'Choose a table', 'Venues are played for cows: both players put in the entry fee and the winner takes both. Practice is free.');
-    h += '<section class="block"><h3>The road to Nyanza</h3><ol class="ladder">';
-    P.VENUES.forEach(function (v) {
-      var open = P.venueOpen(v), sel = UI.sel.venue === v.id && open, wins = P.data.venues[v.id] || 0;
+    var d = P.data, next = P.nextTable();
+    var h = head('Play', 'Choose a table', 'At the tables you play for cows: both sides put in the entry fee and the winner takes both.');
+    h += '<section class="block"><h3>Tables</h3>';
+    h += '<p class="muted">Table games are played the way masters play: guteba and kugarama on, no seed counts, no move preview, no coach. New to the game? Learn it or practise first.</p>';
+    var pick = P.TABLES.filter(function (v) { return v.id === UI.sel.table && P.tableOpen(v); })[0];
+    if (!pick) P.TABLES.forEach(function (v) { if (P.tableOpen(v)) pick = v; });
+    h += '<ol class="ladder">';
+    P.TABLES.forEach(function (v, n) {
+      var open = P.tableOpen(v), sel = open && pick === v, wins = d.tables[v.id] || 0;
       h += '<li class="venue' + (open ? '' : ' locked') + (sel ? ' sel' : '') + '">';
       h += '<button class="venue-head" data-act="venue" data-v="' + v.id + '"' + (open ? '' : ' disabled') + ' aria-expanded="' + sel + '">';
-      h += '<span class="venue-name"><b>' + esc(v.name) + '</b><small>' + (v.blurb ? esc(v.blurb) + ' ' : '') + 'Opponent: ' + esc(v.strength) + '.' + (wins ? ' ' + U.plural(wins, 'win') + '.' : '') + '</small></span>';
-      h += '<span class="venue-fee">' + (open ? v.fee + HORN : ICON.lock + 'Level ' + v.level) + '</span></button>';
+      h += '<span class="venue-n">' + (n + 1) + '</span>';
+      h += '<span class="venue-name"><b>' + esc(v.name) + '</b><small>Opponent: ' + esc(v.strength) + '.' + (wins ? ' ' + U.plural(wins, 'win') + '.' : '') + '</small></span>';
+      h += '<span class="venue-fee">' + (open ? v.fee + HORN : ICON.lock + 'Opens at ' + v.need + ' won') + '</span></button>';
+      if (!open && v === next) h += '<div class="venue-body"><div class="xp" role="img" aria-label="' + d.won + ' of ' + v.need + ' cows won"><i style="width:' + Math.round(100 * d.won / v.need) + '%"></i></div><p class="muted">' + d.won + ' of ' + v.need + ' cows won at the tables.</p></div>';
       if (sel) {
-        h += '<div class="venue-body"><div class="seg seg-wide" role="group" aria-label="Table">';
-        [['standard', 'Standard'], ['traditional', 'Traditional'], ['master', 'Master']].forEach(function (t) {
-          h += '<button type="button" data-act="table" data-v="' + t[0] + '" aria-pressed="' + (UI.sel.table === t[0]) + '">' + t[1] + '</button>';
-        });
-        h += '</div><p class="muted">' + (UI.sel.table === 'standard' ? 'Your rules from Settings (' + (S.get('reverseSowing') ? 'guteba and kugarama on' : 'no guteba or kugarama') + ').' :
-          UI.sel.table === 'traditional' ? 'Guteba and kugarama are on.' : 'Traditional rules with seed counts and move previews switched off.') + '</p>';
-        var can = P.data.cows >= v.fee;
-        h += '<button class="btn btn-primary" data-act="enter"' + (can ? '' : ' disabled') + '>Take a seat · ' + v.fee + ' cows</button>';
-        if (!can) h += '<p class="muted">You have ' + P.data.cows + ' cows. Win some in practice missions, puzzles or lessons, or come back tomorrow for the daily top-up.</p>';
+        var can = d.cows >= v.fee;
+        h += '<div class="venue-body"><button class="btn btn-primary" data-act="enter"' + (can ? '' : ' disabled') + '>Take a seat · ' + v.fee + ' cows</button>';
+        if (!can) h += '<p class="muted">You have ' + d.cows + ' cows. Earn more from lessons, puzzles and missions, or come back tomorrow for the daily top-up.</p>';
         h += '</div>';
       }
       h += '</li>';
     });
-    h += '</ol><p class="muted">You are level ' + lv.n + '. Higher venues open as you level up.</p></section>';
+    h += '</ol></section>';
     h += '<section class="block"><h3>Practice</h3><div class="seg seg-wide" role="group" aria-label="Computer level">';
     Object.keys(LEVEL_NAMES).forEach(function (k) { h += '<button type="button" data-act="level" data-v="' + k + '" aria-pressed="' + (UI.sel.level === k) + '">' + LEVEL_NAMES[k] + '</button>'; });
-    h += '</div><p class="muted">' + (UI.sel.level === 'beginner' || UI.sel.level === 'intermediate' ? 'Coached: you get a warning when a move leaves cows exposed, and you can undo.' : 'No coaching and no undo at this level.') + '</p>';
+    h += '</div><p class="muted">Free, with seed counts and move previews, by your rules from Settings. ' + (UI.sel.level === 'beginner' || UI.sel.level === 'intermediate' ? 'Coached: you get a warning when a move leaves cows exposed, and you can undo.' : 'No coaching and no undo at this level.') + '</p>';
     h += '<button class="btn" data-act="practice">Start a practice game</button></section>';
     h += '<section class="block"><h3>With people</h3><div class="row"><button class="btn" data-act="local">Pass and play</button><button class="btn" data-act="nav" data-to="online">Play a friend online</button></div></section>';
     return h;
@@ -385,7 +386,7 @@
   function panelProgress() {
     var d = P.data, lv = P.level(), h = head('Progress', 'Level ' + lv.n + ': ' + esc(lv.name), '');
     h += '<div class="xp" role="img" aria-label="' + d.xp + ' XP"><i style="width:' + Math.round(lv.frac * 100) + '%"></i></div><p class="muted">' + d.xp + ' XP' + (lv.next ? ' · ' + (lv.next - d.xp) + ' to level ' + (lv.n + 1) : ' · top level') + '</p>';
-    h += '<dl class="stats"><div><dt>Herd</dt><dd>' + d.cows + HORN + '</dd></div><div><dt>Streak</dt><dd>' + U.plural(P.streak(), 'day') + '</dd></div><div><dt>Online rating</dt><dd>' + d.rating + '</dd></div><div><dt>Wins</dt><dd>' + d.stats.wins + ' of ' + d.stats.games + '</dd></div><div><dt>Cows captured</dt><dd>' + d.stats.captures + '</dd></div><div><dt>Puzzles</dt><dd>' + d.stats.puzzles + '</dd></div></dl>';
+    h += '<dl class="stats"><div><dt>Herd</dt><dd>' + d.cows + HORN + '</dd></div><div><dt>Streak</dt><dd>' + U.plural(P.streak(), 'day') + '</dd></div><div><dt>Online rating</dt><dd>' + d.rating + '</dd></div><div><dt>Won at tables</dt><dd>' + d.won + HORN + '</dd></div><div><dt>Wins</dt><dd>' + d.stats.wins + ' of ' + d.stats.games + '</dd></div><div><dt>Cows captured</dt><dd>' + d.stats.captures + '</dd></div><div><dt>Puzzles</dt><dd>' + d.stats.puzzles + '</dd></div></dl>';
     h += todayBlock();
     h += '<section class="block"><h3>Badges</h3><ul class="badges">';
     P.BADGES.forEach(function (b, n) { h += '<li class="' + (d.badges[b.id] ? 'got' : '') + '" title="' + esc(b.text) + '">' + badgeSvg(n) + '<b>' + esc(b.name) + '</b><small>' + esc(b.text) + '</small></li>'; });
@@ -565,10 +566,9 @@
       case 'puzzle-exit': UI.leave(); UI.go('puzzles'); break;
       case 'puzzle-show': Z.showSolution(); break;
       case 'puzzle-share': U.share(Z.shareText()).then(function (r) { IG.toast(r === 'failed' ? 'Could not copy. Select the card text below and copy it.' : r === 'shared' ? 'Shared.' : 'Result copied. Paste it anywhere.'); }); break;
-      case 'venue': UI.sel.venue = t.dataset.v; UI.render(); break;
-      case 'table': UI.sel.table = t.dataset.v; UI.render(); break;
+      case 'venue': UI.sel.table = t.dataset.v; UI.render(); break;
       case 'level': UI.sel.level = t.dataset.v; UI.render(); break;
-      case 'enter': UI.startGame({ kind: 'venue', venue: UI.sel.venue, table: UI.sel.table }); break;
+      case 'enter': var tb = P.TABLES.filter(function (v) { return v.id === UI.sel.table && P.tableOpen(v); })[0]; if (!tb) P.TABLES.forEach(function (v) { if (P.tableOpen(v)) tb = v; }); UI.startGame({ kind: 'table', table: tb.id }); break;
       case 'practice': UI.startGame({ kind: 'practice', level: UI.sel.level }); break;
       case 'local': if (UI.mode !== 'menu') UI.leave(); UI.startGame({ kind: 'local' }); break;
       case 'rematch': UI.rematch(); break;

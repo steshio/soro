@@ -223,16 +223,14 @@ h3 { font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: 
 .lesson-row.next .lesson-meta { color: var(--brass); }
 
 /* ---- venues ---- */
-.ladder { position: relative; display: flex; flex-direction: column; gap: 6px; padding-left: 24px; }
-.ladder::before { content: ""; position: absolute; left: 7px; top: 22px; bottom: 22px; width: 2px; background: var(--line-2); }
-.venue { position: relative; border-radius: 10px; border: 1.5px solid var(--line); }
-.venue::before { content: ""; position: absolute; left: -22.5px; top: 19px; width: 11px; height: 11px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 3px var(--bg); }
-.venue.locked::before { background: var(--line-2); }
+.ladder { display: flex; flex-direction: column; gap: 6px; }
+.venue { border-radius: 10px; border: 1.5px solid var(--line); }
 .venue.sel { border-color: var(--brass); background: var(--surface); }
-.venue.sel::before { background: var(--brass); }
+.venue-n { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--chip); font-weight: 700; font-variant-numeric: tabular-nums; }
+.venue.sel .venue-n { background: var(--btn-bg); color: var(--btn-fg); }
 .venue-head { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 10px 12px; border: 0; background: transparent; border-radius: 10px; }
 .venue-name { flex: 1; min-width: 0; }
-.venue-name b { display: block; font: 400 18px/1.2 var(--font-display); }
+.venue-name b { display: block; font-size: 15px; }
 .venue-name small { color: var(--ink-3); font-size: 13px; }
 .venue-fee { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; font-size: 13.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .venue-fee .ico { color: var(--brass); }

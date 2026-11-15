@@ -193,7 +193,7 @@
 
   /**
    * cfg: { mode, rules, seats:[{kind:'human'|'ai'|'remote'|'none', name, ai}], first, pits, ply, bottom,
-   *        solo, coached, noPreview, noCounts, hooks:{onMove,onEnd,onTurn,filterStart}, labels, title, stake, table, venue }
+   *        solo, coached, noPreview, noCounts, hooks:{onMove,onEnd,onTurn,filterStart}, labels, title, stake, table }
    */
   G.start = function (cfg) {
     G.gen++;

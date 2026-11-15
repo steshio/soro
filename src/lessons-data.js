@@ -128,7 +128,7 @@
       { type: 'say', pos: { my: 'std', op: 'std' }, text: 'Then comes the main phase, kubuguza. Captures are live. You win when your opponent has no pit of 2 or more seeds left. A win is one point (igitego).' },
       { type: 'say', pos: { my: 'std', op: 'std' }, text: 'Masters are known for never counting seeds. When you feel ready, switch off Show counts in Settings. That is Master mode.' },
       { type: 'play', text: 'Play a full game against the Beginner computer. The coach warns you when a move leaves cows exposed, and you can take moves back.' },
-      { type: 'recap', points: ['Two opening moves without captures, then kubuguza.', 'Win by leaving your opponent nothing to sow.', 'Next: climb the venues, or try the daily puzzle.'] }
+      { type: 'recap', points: ['Two opening moves without captures, then kubuguza.', 'Win by leaving your opponent nothing to sow.', 'Next: sit down at the tables, or try the daily puzzle.'] }
     ] }
   ];
 

@@ -13,7 +13,7 @@
 
   var WIN = 100000;
 
-  /* Named strengths. Venues can pass their own parameter object instead. */
+  /* Named strengths. Tables pass their own parameter object instead. */
   var LEVELS = {
     beginner:     { depth: 1, time: 120,  blunder: 0.38, noise: 14 },
     intermediate: { depth: 2, time: 350,  blunder: 0.10, noise: 5 },
