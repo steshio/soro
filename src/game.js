@@ -99,6 +99,7 @@
       b.classList.toggle('glow', !!B.glow[p + '-' + i]);
       b.classList.toggle('mark', !!B.marks[p + '-' + i]);
       b.classList.toggle('mark-warn', B.marks[p + '-' + i] === 'warn');
+      b.classList.toggle('mark-alt', B.marks[p + '-' + i] === 'alt');
       var owner = cfg.labels ? cfg.labels[p] : (p === 0 ? 'Bottom' : 'Top');
       var label = owner + ' ' + (i >= 8 ? 'inner' : 'outer') + ' pit ' + E.pitNumber(i) + ', ' + U.plural(n, 'seed');
       if (human && mine) label += playable ? ', can be sown' : ', ' + (why || 'cannot be sown').replace(/\.$/, '').toLowerCase();
@@ -111,7 +112,7 @@
     B.glow = {}; (list || []).forEach(function (x) { B.glow[x[0] + '-' + x[1]] = 1; }); B.refresh();
   };
   B.setMarks = function (list, kind) {
-    B.marks = {}; (list || []).forEach(function (x) { B.marks[x[0] + '-' + x[1]] = kind || 'on'; }); B.refresh();
+    B.marks = {}; (list || []).forEach(function (x) { B.marks[x[0] + '-' + x[1]] = x[2] || kind || 'on'; }); B.refresh();   // x = [seat, pit, kind?]
   };
 
   B.clearFx = function () { B.fx.innerHTML = ''; };
@@ -155,8 +156,10 @@
   B.ask = function (pending, seat, options) {
     return new Promise(function (resolve) {
       var q = V.projectPit(seat, pending.pit), html = '';
+      // clockwise from a Nteba pit is guteba, from an Ngarama pit kugarama; the normal direction has no special name
+      var rev = pending.name === 'kugarama' ? 'Kugarama' : 'Guteba';
       var TEXT = {
-        ccw: ['Guteba', 'anticlockwise, the normal way'], cw: ['Kugarama', 'clockwise, for a capture'],
+        ccw: ['Normal way', 'anticlockwise'], cw: [rev, 'clockwise, to capture'],
         take: ['Kurasa', 'capture the cows'], pass: ['Ndahise', 'I pass, and relay']
       };
       html += '<p class="prompt-q">' + (pending.type === 'capture' ? 'Capture here?' : pending.kind === 'capsow' ? 'Sow the cows which way?' : 'Which way?') + '</p>';
@@ -355,10 +358,13 @@
   };
 
   function describe(seat, out) {
-    var first = out.events[0], relays = 0, cw = false;
-    out.events.forEach(function (e) { if (e.t === 'relay') relays++; if ((e.t === 'lift' || e.t === 'capsow') && e.dir === -1) cw = true; });
+    var first = out.events[0], relays = 0, cw = null;
+    out.events.forEach(function (e) {
+      if (e.t === 'relay') relays++;
+      if (cw === null && (e.t === 'lift' || e.t === 'capsow') && e.dir === -1) cw = E.reverseKind(G.cfg.rules, e.t === 'lift' ? e.pit : e.from) || 'a clockwise lap';
+    });
     var s = seatName(seat) + ' sowed ' + U.plural(first.n, 'seed') + ' from ' + (first.pit >= 8 ? 'inner' : 'outer') + ' pit ' + E.pitNumber(first.pit);
-    if (cw) s += ', turned clockwise';
+    if (cw) s += ', played ' + cw;
     if (relays) s += ', relayed ' + U.times(relays);
     if (out.captured) s += ', captured ' + U.plural(out.captured, 'cow');
     return s + '.';

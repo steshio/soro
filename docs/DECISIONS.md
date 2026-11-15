@@ -15,6 +15,7 @@ A record of the calls made in the first build (version 0.1.0, 15 November 2026),
 
 ## Teaching
 
+- Level 5 teaches guteba from a Nteba pit with two seeds, and kugarama from an Ngarama pit holding nine, because under the direct-capture rule kugarama needs a big pit.
 - Level 1 switches relays off and levels 1 and 2 switch captures off, through `RULES`, so each level adds exactly one idea. The copy never says a rule does not exist; it says what happens now.
 - Every challenge position was found by search and is verified by test to have exactly the intended solution.
 - "Capture in two" uses a fixed, quiet opponent reply rather than a searched one, so the lesson cannot be derailed.
@@ -22,7 +23,8 @@ A record of the calls made in the first build (version 0.1.0, 15 November 2026),
 
 ## Engine and AI
 
-- Clockwise sowing never persists: after a reverse capture, relays return to anticlockwise.
+- **Guteba and kugarama** follow the founder's correction of 15 November 2026: Nteba pits are loop indices 0 and 14, Ngarama pits are 7 and 9, and clockwise sowing exists only from them. The first build used the four leftmost pits and called the normal direction guteba; both were wrong. Still an assumption: the clockwise lap must itself capture (see RULES.md, question 1).
+- Clockwise sowing never persists: after a clockwise capture, relays return to anticlockwise.
 - A position where every liftable pit is endless is annulled rather than lost.
 - At most 24 decision sequences are enumerated per start pit (only matters in optional-capture mode with long chains).
 - The AI evaluates seed difference, mobility, exposed seeds and threats held, and searches complete turns. Beginner plays a casual move about 38% of the time and prefers ones that miss a capture.

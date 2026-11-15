@@ -43,6 +43,10 @@ for (const lesson of L.LESSONS) {
       const good = legal.filter(m => L.checkGoal(step.goal, infoFor(s, m), E));
       ok(good.length >= 1, tag + ': has a solution');
       ok(good.some(m => m.start === step.answer && (!step.answerDecisions || m.decisions.join() === step.answerDecisions.join())), tag + ': the recorded answer solves it', JSON.stringify(good));
+      if (step.goal.type === 'cw') {
+        const name = E.reverseKind(s.rules, step.answer);
+        ok(!!name && step.text.indexOf(name) >= 0, tag + ': text names the right move (' + name + ')');
+      }
       if (!step.only) {
         ok(legal.length >= 3, tag + ': offers a real choice (' + legal.length + ' moves)');
         ok(good.length < legal.length, tag + ': not every move solves it');
@@ -55,7 +59,7 @@ for (const lesson of L.LESSONS) {
         const threats = E.enumerate(pass).filter(c => c.captured > 0);
         ok(threats.length === 1, tag + ': one threat on the board');
         const ev = E.playTurn(pass, threats[0].start, threats[0].decisions, true).events.find(e => e.t === 'capture');
-        ok(JSON.stringify(step.marks) === JSON.stringify([[0, ev.a], [0, ev.b]]), tag + ': marks match the threatened pits');
+        ok(JSON.stringify(step.marks.map(m => m.slice(0, 2))) === JSON.stringify([[0, ev.a], [0, ev.b]]), tag + ': marks match the threatened pits');
         ok(threats[0].captured === 4, tag + ': text says 4 cows');
       }
     }
@@ -75,7 +79,11 @@ for (const lesson of L.LESSONS) {
       ok(winners.length === 1 && winners[0].m.start === step.first, tag + ': exactly one set-up move works', JSON.stringify(winners.map(w => w.m)));
       ok(winners[0] && winners[0].caps.some(x => x.start === step.answer), tag + ': the recorded second move captures');
     }
-    if (step.marks && step.type === 'say' && lesson.id === 'L5') ok(JSON.stringify(step.marks.map(m => m[1]).sort((a, b) => a - b)) === JSON.stringify(E.RULES.reversePits), tag + ': marks are the reverse pits');
+    if (step.marks && step.type === 'say' && lesson.id === 'L5') {
+      const of = kind => step.marks.filter(m => m[2] === kind).map(m => m[1]);
+      ok(JSON.stringify(of('warn')) === JSON.stringify(E.RULES.ntebaPits), tag + ': Nteba pits are marked');
+      ok(JSON.stringify(of('alt')) === JSON.stringify(E.RULES.ngaramaPits), tag + ': Ngarama pits are marked');
+    }
   });
 }
 

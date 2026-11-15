@@ -243,8 +243,8 @@
         [['standard', 'Standard'], ['traditional', 'Traditional'], ['master', 'Master']].forEach(function (t) {
           h += '<button type="button" data-act="table" data-v="' + t[0] + '" aria-pressed="' + (UI.sel.table === t[0]) + '">' + t[1] + '</button>';
         });
-        h += '</div><p class="muted">' + (UI.sel.table === 'standard' ? 'Your rules from Settings (' + (S.get('reverseSowing') ? 'reverse sowing on' : 'no reverse sowing') + ').' :
-          UI.sel.table === 'traditional' ? 'Reverse sowing (kugarama) is on.' : 'Traditional rules with seed counts and move previews switched off.') + '</p>';
+        h += '</div><p class="muted">' + (UI.sel.table === 'standard' ? 'Your rules from Settings (' + (S.get('reverseSowing') ? 'guteba and kugarama on' : 'no guteba or kugarama') + ').' :
+          UI.sel.table === 'traditional' ? 'Guteba and kugarama are on.' : 'Traditional rules with seed counts and move previews switched off.') + '</p>';
         var can = P.data.cows >= v.fee;
         h += '<button class="btn btn-primary" data-act="enter"' + (can ? '' : ' disabled') + '>Take a seat · ' + v.fee + ' cows</button>';
         if (!can) h += '<p class="muted">You have ' + P.data.cows + ' cows. Win some in practice missions, puzzles or lessons, or come back tomorrow for the daily top-up.</p>';
@@ -424,7 +424,8 @@
     h += '<section class="block"><h3>Words used in this game</h3><dl class="glossary">';
     [['Igisoro / Ikibuguzo', 'The game and the board'], ['Kubuguza', 'Playing the game; the main phase'], ['Icyuba (ibyuba)', 'Pit (pits)'], ['Ubusoro', 'Seeds'], ['Inka', 'Cows; the seeds you capture'],
       ['Urunyana', 'Line of calves; a row of single seeds'], ['Kugereka', 'Placing the seeds at setup'], ['Guca umuvuno', 'The opening'], ['Kuvuna / Kwivunura', 'First move / second move of the opening'],
-      ['Kurasa', 'To capture'], ['Guteba', 'Sowing anticlockwise, the normal direction'], ['Kugarama', 'Sowing clockwise from a reverse pit, for a capture'], ['Nteba / Ugutwi', 'Reverse pits in the inner row / outer row'],
+      ['Kurasa', 'To capture'], ['Nteba', 'Your two special pits on the left: the outer corner pit and the second inner pit'], ['Guteba', 'Sowing clockwise from a Nteba pit, to capture'],
+      ['Ngarama', 'Your two special pits on the right: the outer corner pit and the second inner pit'], ['Kugarama', 'Sowing clockwise from an Ngarama pit, to capture'],
       ['Ndahise', 'I pass; declining a capture'], ['Ndakubye', 'I retreat; the opponent’s protective reply'], ['Gutanga inganji', 'The winner starts the next game'], ['Igitego', 'A point, one per game won']
     ].forEach(function (g) { h += '<div><dt>' + g[0] + '</dt><dd>' + g[1] + '</dd></div>'; });
     h += '</dl></section>';
@@ -495,9 +496,9 @@
       return '<label class="switch"><input type="checkbox" id="set-' + key + '" data-check="' + key + '"' + (on ? ' checked' : '') + '><span><b>' + label + '</b>' + (note ? '<small>' + note + '</small>' : '') + '</span></label>';
     }
     h += '<section><h3>Rules</h3>' + seg('rulesMode', [['learn', 'Learn'], ['traditional', 'Traditional']], d.rulesMode, 'Rules mode');
-    h += '<p class="muted">' + (d.rulesMode === 'learn' ? 'Forced capture, no reverse sowing. Best while you are learning.' : 'Forced capture, with reverse sowing (kugarama) from your four leftmost pits.') + '</p>';
+    h += '<p class="muted">' + (d.rulesMode === 'learn' ? 'Forced capture, no clockwise moves. Best while you are learning.' : 'Forced capture, with guteba and kugarama: clockwise moves from your Nteba and Ngarama pits.') + '</p>';
     h += '<details' + (UI.advOpen ? ' open' : '') + ' id="adv"><summary>Advanced rules</summary>';
-    h += toggle('reverseSowing', 'Reverse sowing', d.reverseSowing, 'Kugarama from the reverse pits, only when the lap captures.');
+    h += toggle('reverseSowing', 'Guteba and kugarama', d.reverseSowing, 'Sow clockwise from a Nteba or Ngarama pit, only when that lap captures.');
     h += toggle('optional', 'Optional capture', d.captureMode === 'optional', 'You may decline a capture by saying ndahise (I pass) and relay instead.');
     h += toggle('origin', 'Captured cows start in the origin pit', d.captureSowStart === 'origin', 'Off: the first cow goes into the pit after the one where the move began.');
     h += '</details><p class="muted">Rule changes apply to the next game you start.</p></section>';
