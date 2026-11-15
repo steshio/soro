@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PROGRESSION: XP, levels, cows, streaks, badges, venues, missions, cosmetics
+   PROGRESSION: XP, levels, cows, streaks, badges, tables, missions, cosmetics
    Personal progress is private to the viewer (db: data/users/<id>/profile,
    with browser storage as the fallback). Nothing here can be bought.
    ========================================================================== */
@@ -13,19 +13,21 @@
     { xp: 560, name: 'Tactician' }, { xp: 900, name: 'Strategist' }, { xp: 1400, name: 'Expert' }, { xp: 2100, name: 'Master' }
   ];
 
-  /* The venue ladder. TODO(founder): confirm the names; only Huye and Nyanza carry a description from the brief. */
-  var VENUES = [
-    { id: 'village', name: 'Home village', blurb: 'Where everyone starts.', fee: 5, level: 1, strength: 'Beginner', coached: true,
+  /* The table ladder against the computer: six steps, each with a bigger stake and a stronger opponent.
+     A table opens when the player has WON enough cows at the tables (`need`), not by XP.
+     TODO(founder): names for the six steps, after research with real players. Numbered for now. */
+  var TABLES = [
+    { id: 't1', name: 'Table 1', fee: 5, need: 0, strength: 'Beginner',
       ai: { depth: 1, time: 120, blunder: 0.38, noise: 14 }, tint: '#ffffff', air: 700, hue: 'a' },
-    { id: 'kigali', name: 'Kigali', blurb: '', fee: 15, level: 2, strength: 'Intermediate', coached: true,
+    { id: 't2', name: 'Table 2', fee: 15, need: 15, strength: 'Intermediate',
       ai: { depth: 2, time: 300, blunder: 0.12, noise: 6 }, tint: '#fff4ea', air: 1500, hue: 'b' },
-    { id: 'musanze', name: 'Musanze', blurb: '', fee: 30, level: 3, strength: 'Intermediate, fewer slips',
+    { id: 't3', name: 'Table 3', fee: 30, need: 60, strength: 'Intermediate, fewer slips',
       ai: { depth: 2, time: 350, blunder: 0.03, noise: 3 }, tint: '#f1f5ee', air: 500, hue: 'c' },
-    { id: 'rubavu', name: 'Rubavu', blurb: '', fee: 60, level: 4, strength: 'Strong',
+    { id: 't4', name: 'Table 4', fee: 60, need: 150, strength: 'Strong',
       ai: { depth: 3, time: 600, blunder: 0, noise: 2 }, tint: '#eef3f7', air: 1100, hue: 'd' },
-    { id: 'huye', name: 'Huye', blurb: 'Where the 2023 national final was held.', fee: 120, level: 5, strength: 'Strong, looks further ahead',
+    { id: 't5', name: 'Table 5', fee: 120, need: 330, strength: 'Strong, looks further ahead',
       ai: { depth: 4, time: 900, blunder: 0, noise: 1 }, tint: '#fbefe2', air: 900, hue: 'e' },
-    { id: 'nyanza', name: 'Nyanza', blurb: 'The old royal capital. The King’s court.', fee: 250, level: 6, strength: 'Master',
+    { id: 't6', name: 'Table 6', fee: 250, need: 690, strength: 'Master',
       ai: { depth: 12, time: 2400, blunder: 0, noise: 0 }, tint: '#f3e7d8', air: 380, hue: 'f' }
   ];
 
@@ -34,9 +36,9 @@
     { id: 'firstWin', name: 'First win', text: 'Win a game.' },
     { id: 'chain3', name: 'Three in a row', text: 'Make three captures in one turn.' },
     { id: 'firstReverse', name: 'Against the flow', text: 'Capture with guteba or kugarama.' },
-    { id: 'masterWin', name: 'Master table', text: 'Win with counts and previews switched off.' },
+    { id: 'masterWin', name: 'Table win', text: 'Win at a table, played the way masters play.' },
     { id: 'streak7', name: 'Seven days', text: 'Play seven days in a row.' }
-  ].concat(VENUES.map(function (v) { return { id: 'venue_' + v.id, name: v.name, text: 'Take a seat at ' + v.name + '.' }; }));
+  ].concat(TABLES.map(function (v) { return { id: 'table_' + v.id, name: v.name, text: 'Take a seat at ' + v.name + '.' }; }));
 
   var COSMETICS = [
     { id: 'wood:walnut', kind: 'wood', name: 'Walnut board', level: 1 },
@@ -64,15 +66,15 @@
 
   function fresh() {
     return { v: 1, xp: 0, cows: 50, rating: 1200, rated: 0, streak: { n: 0, day: '' }, best: 0, badges: {}, lessons: {},
-      stats: { games: 0, wins: 0, captures: 0, puzzles: 0 }, venues: {}, missions: { day: '', items: [] },
+      stats: { games: 0, wins: 0, captures: 0, puzzles: 0 }, won: 0, tables: {}, missions: { day: '', items: [] },
       login: { day: '', idx: 0 }, topup: '', daily: {}, look: { wood: 'walnut', seed: 'black', carve: false, bracelet: '' },
       ratedKeys: [], updatedAt: 0 };
   }
   function adopt(raw) {       // stored data is untrusted: copy known fields with type checks
     var d = fresh(); if (!raw || typeof raw !== 'object') return d;
-    ['xp', 'cows', 'rating', 'rated', 'best', 'updatedAt'].forEach(function (k) { if (typeof raw[k] === 'number' && isFinite(raw[k])) d[k] = Math.max(0, Math.round(raw[k])); });
+    ['xp', 'cows', 'rating', 'rated', 'best', 'won', 'updatedAt'].forEach(function (k) { if (typeof raw[k] === 'number' && isFinite(raw[k])) d[k] = Math.max(0, Math.round(raw[k])); });
     if (typeof raw.topup === 'string') d.topup = raw.topup.slice(0, 10);
-    ['badges', 'lessons', 'venues', 'daily', 'stats'].forEach(function (k) {
+    ['badges', 'lessons', 'tables', 'daily', 'stats'].forEach(function (k) {
       if (raw[k] && typeof raw[k] === 'object') for (var x in raw[k]) if (/^[\w:.-]{1,40}$/.test(x) && (typeof raw[k][x] === 'number' || typeof raw[k][x] === 'boolean')) d[k][x] = raw[k][x];
     });
     if (raw.streak && typeof raw.streak.n === 'number') d.streak = { n: Math.max(0, raw.streak.n | 0), day: String(raw.streak.day || '').slice(0, 10) };
@@ -88,7 +90,7 @@
     return d;
   }
 
-  var P = IG.progress = { LEVELS: LEVELS, VENUES: VENUES, BADGES: BADGES, COSMETICS: COSMETICS, LOGIN_TRACK: LOGIN_TRACK, MISSIONS: MISSIONS };
+  var P = IG.progress = { LEVELS: LEVELS, TABLES: TABLES, BADGES: BADGES, COSMETICS: COSMETICS, LOGIN_TRACK: LOGIN_TRACK, MISSIONS: MISSIONS };
   P.data = adopt(U.lsGet('igisoro.profile.v1', null));
 
   /* ---- storage ----------------------------------------------------------- */
@@ -129,8 +131,7 @@
     var before = P.level().n; P.data.xp += n;
     var after = P.level();
     if (after.n > before) {
-      var unlocked = COSMETICS.filter(function (c) { return c.level === after.n; }).map(function (c) { return c.name; })
-        .concat(VENUES.filter(function (v) { return v.level === after.n; }).map(function (v) { return v.name + ' venue'; }));
+      var unlocked = COSMETICS.filter(function (c) { return c.level === after.n; }).map(function (c) { return c.name; });
       IG.toast('<b>Level ' + after.n + ': ' + U.esc(after.name) + '</b>' + (unlocked.length ? '<span>Unlocked: ' + U.esc(unlocked.join(', ')) + '</span>' : ''), 'good');
       IG.audio.good();
     }
@@ -166,7 +167,7 @@
       d.missions = { day: today, items: picks.map(function (id) { return { id: id, n: 0, done: false }; }) };
       changed = true;
     }
-    if (d.cows < VENUES[0].fee && d.topup !== today) {
+    if (d.cows < TABLES[0].fee && d.topup !== today) {
       d.cows = 20; d.topup = today; changed = true;
       IG.toast('<b>Your herd was low.</b><span>Here are 20 cows to start again. One top-up a day.</span>');
     }
@@ -209,8 +210,7 @@
       if (d.won) {
         D.stats.wins++; badge('firstWin'); addXp(25);
         if (d.mode === 'ai') mission('win', 1);
-        if (d.venue) D.venues[d.venue] = (D.venues[d.venue] || 0) + 1;
-        if (d.table === 'master') badge('masterWin');
+        if (d.table) { D.tables[d.table] = (D.tables[d.table] || 0) + 1; badge('masterWin'); }
       }
     } else if (type === 'lesson') {
       touchStreak();
@@ -224,16 +224,24 @@
     save();
   };
 
-  /* ---- venues and stakes ---------------------------------------------------- */
-  P.venueOpen = function (v) { return P.level().n >= v.level; };
-  P.enterVenue = function (v) {
-    if (!P.venueOpen(v) || P.data.cows < v.fee) return false;
-    addCows(-v.fee); badge('venue_' + v.id); save();
+  /* ---- tables and stakes ----------------------------------------------------- */
+  /* a table opens once enough cows have been won at the tables */
+  P.tableOpen = function (v) { return P.data.won >= v.need; };
+  P.nextTable = function () { for (var k = 0; k < TABLES.length; k++) if (!P.tableOpen(TABLES[k])) return TABLES[k]; return null; };
+  P.enterTable = function (v) {
+    if (!P.tableOpen(v) || P.data.cows < v.fee) return false;
+    addCows(-v.fee); badge('table_' + v.id); save();
     return true;
   };
-  P.settleVenue = function (v, result) {       // 'win' | 'loss' | 'draw'
-    if (result === 'win') { addCows(v.fee * 2); IG.toast('<b>You take both entry fees</b><span>+' + (v.fee * 2) + ' cows</span>', 'good'); }
-    else if (result === 'draw') addCows(v.fee);
+  P.settleTable = function (v, result) {       // 'win' | 'loss' | 'draw'
+    if (result === 'win') {
+      var before = P.data.won;
+      addCows(v.fee * 2); P.data.won += v.fee;         // the stake comes back, the opponent's fee is what was won
+      IG.toast('<b>You take both entry fees</b><span>+' + (v.fee * 2) + ' cows</span>', 'good');
+      TABLES.forEach(function (t) {
+        if (t.need > before && t.need <= P.data.won) IG.toast('<b>' + U.esc(t.name) + ' is open</b><span>You have won ' + P.data.won + ' cows at the tables.</span>', 'good');
+      });
+    } else if (result === 'draw') addCows(v.fee);
     save();
   };
 
