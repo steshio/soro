@@ -122,8 +122,8 @@ a { color: inherit; }
 .pit.sel, .pit.sel:hover { box-shadow: inset 0 0 0 3px var(--fx); }
 .pit.dim::before { content: ""; position: absolute; inset: 7%; border-radius: 50%; background: rgba(16, 9, 6, 0.4); }
 .pit.mark { box-shadow: inset 0 0 0 3px var(--fx); }
-.pit.mark-warn { box-shadow: inset 0 0 0 3.5px var(--fx-cap); }
-.pit.mark-alt { box-shadow: inset 0 0 0 3.5px var(--fx-alt); }
+.pit.mark-warn, .pit.sel.mark-warn { box-shadow: inset 0 0 0 3.5px var(--fx-cap); }
+.pit.mark-alt, .pit.sel.mark-alt { box-shadow: inset 0 0 0 3.5px var(--fx-alt); }
 .pit.glow { box-shadow: inset 0 0 0 3px var(--fx), 0 0 16px 5px rgba(244, 210, 126, 0.6); animation: glow 1.3s ease-in-out infinite; }
 @keyframes glow { 50% { box-shadow: inset 0 0 0 3px var(--fx), 0 0 4px 1px rgba(244, 210, 126, 0.35); } }
 .pit:focus-visible { outline: 3px solid #fff; outline-offset: 1px; border-radius: 50%; box-shadow: 0 0 0 6px rgba(0, 0, 0, 0.55); }
@@ -141,6 +141,47 @@ body.hide-counts .handchip, .board.no-counts .handchip { display: none; }
 .prompt-q { font-weight: 700; font-size: 13px; padding: 0 2px; }
 .prompt .btn { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 7px 12px; }
 .prompt .btn span { font-weight: 400; font-size: 12px; color: var(--ink-3); }
+
+/* the one-time explainer for Nteba and Ngarama pits */
+.prompt.explain { width: min(300px, 72%); max-width: none; gap: 7px; padding: 14px; font-size: 13.5px; line-height: 1.45; }
+.prompt.explain p { margin: 0; }
+.prompt.explain .btn { align-self: flex-start; flex-direction: row; padding: 6px 16px; margin-top: 4px; }
+.explain-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); }
+.explain-title { font: 400 19px/1.2 var(--font-display); }
+
+/* two arrows on the board, two buttons in the board's lower margin */
+.fx-path.fx-normal { stroke: var(--fx); }
+.fx-path.fx-guteba { stroke: var(--fx-cap); stroke-dasharray: 1 9; }
+.fx-path.fx-kugarama { stroke: var(--fx-alt); stroke-dasharray: 1 9; }
+.fx-dot.fx-normal, .fx-head.fx-normal { fill: var(--fx); }
+.fx-dot.fx-guteba, .fx-head.fx-guteba { fill: var(--fx-cap); }
+.fx-dot.fx-kugarama, .fx-head.fx-kugarama { fill: var(--fx-alt); }
+.fx-head { stroke: rgba(20, 10, 6, 0.55); stroke-width: 1.5; }
+.chooser { position: absolute; z-index: 6; left: 50%; bottom: 2.2%; transform: translateX(-50%); display: flex; gap: 8px; width: max-content; max-width: 96%; }
+.chooser .choice { min-height: 40px; padding: 6px 12px 6px 10px; gap: 8px; text-align: left; background: var(--surface); border-color: transparent; box-shadow: 0 6px 22px rgba(0, 0, 0, 0.3); }
+.chooser .choice:hover { border-color: var(--ink); }
+.chooser .choice span { display: flex; flex-direction: column; line-height: 1.2; }
+.chooser .choice b { font-size: 13.5px; }
+.chooser .choice small { font-weight: 500; font-size: 11.5px; color: var(--ink-3); }
+.dir-ico { width: 22px; height: 22px; flex: none; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.choice-normal .dir-ico { stroke: #b88a1c; }
+.choice-guteba .dir-ico { stroke: #d2553b; }
+.choice-kugarama .dir-ico { stroke: #3f8f2a; }
+:root[data-theme="dark"] .choice-normal .dir-ico { stroke: var(--fx); }
+:root[data-theme="dark"] .choice-guteba .dir-ico { stroke: var(--fx-cap); }
+:root[data-theme="dark"] .choice-kugarama .dir-ico { stroke: var(--fx-alt); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .choice-normal .dir-ico { stroke: var(--fx); }
+  :root:not([data-theme="light"]) .choice-guteba .dir-ico { stroke: var(--fx-cap); }
+  :root:not([data-theme="light"]) .choice-kugarama .dir-ico { stroke: var(--fx-alt); }
+}
+@media (max-width: 480px) {
+  .chooser { gap: 6px; bottom: 1.5%; }
+  .chooser .choice { min-height: 40px; padding: 4px 9px 4px 7px; gap: 6px; }
+  .chooser .choice b { font-size: 12.5px; }
+  .chooser .choice small { font-size: 10.5px; }
+  .dir-ico { width: 18px; height: 18px; }
+}
 
 /* no WebGL: a flat board drawn in CSS, counts always on */
 .flat .pits::before { content: ""; position: absolute; left: 2.24%; right: 2.24%; top: 16.95%; bottom: 16.95%; border-radius: 1.6cqw; background: var(--wood); }
@@ -397,6 +438,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
         <div class="veil" id="veil" hidden></div>
         <div class="handchip" id="handchip" hidden></div>
         <div class="prompt" id="prompt" hidden></div>
+        <div class="chooser" id="chooser" role="group" aria-label="Choose which way to sow" hidden></div>
       </div>
       <div class="plate" id="plate-bottom" hidden></div>
       <div class="controls" id="controls" hidden></div>
@@ -440,7 +482,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     minSeedsToSow: 2,              // a pit needs this many seeds to be played
     seedsPerInnerPit: 4,           // default setup: inner rows filled, outer rows empty
     captureMode: 'forced',         // 'forced' | 'optional' (ndahise allowed)
-    captureSowStart: 'afterOrigin',// 'afterOrigin' | 'origin': where the first captured seed goes
+    captureSowStart: 'afterOrigin',// 'afterOrigin' | 'origin': first captured seed goes after, or into, the pit last lifted
     reverseSowing: true,           // guteba and kugarama: clockwise laps from the four special pits
     ntebaPits: [0, 14],            // Nteba: outer leftmost, inner second from the left. Clockwise from here is guteba.
     ngaramaPits: [7, 9],           // Ngarama: outer rightmost, inner second from the right. Clockwise from here is kugarama.
@@ -561,7 +603,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     var ev = wantLog ? [] : null;
     var di = 0, drops = 0, laps = 0, captured = 0, captures = 0;
     var seen = {};
-    var origin = start;
+    var origin = start;       // the pit last lifted from: captured seeds are sown from here
 
     function isRev(i) { return reverseKind(R, i) !== null; }
 
@@ -582,13 +624,15 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     var cur = start;          // pit to lift from (start or relay)
     var liftKind = 'start';
     var n, dir, first, end, before, j, pit, choice;
-    var capSow = null;        // {n, dir} when the next lap sows captured seeds
+    var capSow = null;        // {n} when the next lap sows captured seeds
 
     for (;;) {
       if (capSow) {
-        /* ---- lap that sows captured seeds from the origin pit ---- */
-        n = capSow.n; dir = capSow.dir;
-        if (dir === 1 && rev && isRev(origin)) {
+        /* ---- lap that sows captured seeds, as if they were just picked up from the origin pit ----
+           The normal direction applies again, whatever direction made the capture. If the origin is a
+           Nteba or Ngarama pit and sowing the cows clockwise would capture directly, that is offered. */
+        n = capSow.n; dir = 1;
+        if (rev && isRev(origin)) {
           var cwFirst = R.captureSowStart === 'origin' ? origin : mod16(origin - 1);
           if (lapCaptures(cwFirst, n, -1)) {
             if (di >= decisions.length) return pending('direction', origin, ['ccw', 'cw'], 'capsow');
@@ -607,6 +651,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
         seen[key] = 1;
         n = my[cur];
         my[cur] = 0;
+        origin = cur;
         dir = 1;
         if (rev && isRev(cur) && lapCaptures(mod16(cur - 1), n, -1)) {
           if (di >= decisions.length) { my[cur] = n; return pending('direction', cur, ['ccw', 'cw'], liftKind); }
@@ -651,7 +696,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
             captured += na + nb; captures++;
             seen = {};                                       // opponent lost seeds: no earlier state can recur
             if (ev) ev.push({ t: 'capture', pit: end, a: a, b: b, na: na, nb: nb, n: na + nb });
-            capSow = { n: na + nb, dir: dir };
+            capSow = { n: na + nb };
             continue;
           }
           if (ev) ev.push({ t: 'pass', pit: end });
@@ -943,7 +988,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
 
     { id: 'L2', title: 'Relay', blurb: 'Land on seeds, lift them all, keep going.', minutes: 2, rules: R2, veil: true, steps: [
       { type: 'say', text: 'A move does not always stop after one lap. If your last seed lands in a pit that already holds seeds, you lift them all and keep sowing. That is a relay.' },
-      { type: 'demo', pos: { my: { 0: 2, 2: 2, 9: 3 }, op: 'std' }, move: { start: 0, decisions: [] },
+      { type: 'demo', pos: { my: { 0: 2, 2: 2, 9: 3 }, op: 'std' }, move: { start: 0, decisions: [] }, expect: { relays: 1, captures: 0 },
         text: 'Watch. Two seeds from the left-hand pit. The second lands on a full pit, so the hand lifts everything there and carries on.',
         after: 'The last seed fell in an empty pit, so the move ended.' },
       { type: 'do', pos: { my: { 0: 2, 2: 2, 9: 3 }, op: 'std' }, goal: { type: 'from', start: 0 }, glow: [0], only: [0], answer: 0,
@@ -962,9 +1007,12 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
 
     { id: 'L3', title: 'Capturing cows', blurb: 'Land in the right pit and take what faces it.', minutes: 2, rules: LEARN, steps: [
       { type: 'say', text: 'Now the far side matters. Your opponent’s seeds are cows (inka), and you win by taking them. To capture is kurasa.' },
-      { type: 'demo', pos: { my: { 8: 2, 10: 1, 3: 2 }, op: { 13: 3, 2: 2, 9: 2, 6: 1 } }, move: { start: 8, decisions: [] },
+      { type: 'demo', pos: { my: { 8: 2, 10: 1, 3: 2 }, op: { 13: 3, 2: 2, 9: 2, 6: 1 } }, move: { start: 8, decisions: [] }, expect: { relays: 0, captures: 1, captured: 5, sowFrom: 8 },
         text: 'Watch. The last seed lands in a full pit of your inner row. Both pits facing it hold cows, so you take them both.',
-        after: 'The captured cows were sown on your side, starting from the pit after the one where the move began.' },
+        after: 'The captured cows were sown on your side, starting just after the pit you picked up from.' },
+      { type: 'demo', pos: { my: { 4: 2, 6: 4, 11: 1 }, op: { 12: 3, 3: 2, 9: 2, 6: 1 } }, move: { start: 4, decisions: [] }, expect: { captures: 1, captured: 5, sowFrom: 6 }, marks: [[0, 6, 'alt']],
+        text: 'One more. This move relays from the marked pit, then captures. Watch where the cows start.',
+        after: 'The cows started just after the marked pit: the last pit the hand picked up from, not the first.' },
       { type: 'do', pos: { my: { 3: 1, 5: 2, 6: 2, 8: 3, 11: 1, 14: 3, 15: 3 }, op: { 0: 2, 3: 3, 4: 3, 8: 2, 9: 3, 10: 1, 15: 2 } },
         goal: { type: 'capture', min: 1 }, answer: 6,
         text: 'Your turn. One of your moves captures. Find it. The preview circles the pits a move would take.',
@@ -977,7 +1025,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
         mid: 'Your opponent has moved. Now capture.',
         wrong: 'That missed the capture. Start again.',
         right: 'Planned and taken. {captured} cows.' },
-      { type: 'recap', points: ['Land your last seed in a full pit of your inner row.', 'If both pits facing it hold seeds, you capture both.', 'Sow the captured cows on your own side, starting where your move began.', 'A capture can lead to another capture in the same turn.'] }
+      { type: 'recap', points: ['Land your last seed in a full pit of your inner row.', 'If both pits facing it hold seeds, you capture both.', 'Sow the captured cows on your own side, starting just after the last pit you picked up from.', 'A capture can lead to another capture in the same turn.'] }
     ] },
 
     { id: 'L4', title: 'Defence', blurb: 'See what is exposed. Move it, or lose it.', minutes: 2, rules: LEARN, steps: [
@@ -1002,11 +1050,11 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       { type: 'say', pos: { my: { 14: 2, 12: 1, 4: 2, 6: 1 }, op: { 11: 2, 4: 2, 13: 1, 1: 2 } }, marks: [[0, 0, 'warn'], [0, 14, 'warn'], [0, 7, 'alt'], [0, 9, 'alt']],
         text: 'From a Nteba pit you may play guteba: sow clockwise instead. From an Ngarama pit the same move is called kugarama. Either is allowed only when that clockwise lap captures.' },
       { type: 'do', pos: { my: { 14: 2, 12: 1, 4: 2, 6: 1 }, op: { 11: 2, 4: 2, 13: 1, 1: 2 } }, goal: { type: 'cw' }, glow: [14], only: [14], answer: 14, answerDecisions: ['cw'],
-        text: 'Sow from the glowing Nteba pit. When the hand stops and asks, choose guteba.',
+        text: 'Tap the glowing Nteba pit. Two arrows show both ways to sow. Choose guteba, the clockwise one.',
         wrong: 'That was the normal direction. Try again and choose guteba.',
-        right: 'Guteba. The cows were sown clockwise too, following the lap that took them.' },
+        right: 'Guteba. Then the cows went the normal way, starting from the Nteba pit you picked up from.' },
       { type: 'do', pos: { my: { 7: 9, 14: 1, 3: 2 }, op: { 9: 2, 6: 2, 12: 1, 0: 3 } }, goal: { type: 'cw' }, glow: [7], only: [7], answer: 7, answerDecisions: ['cw'],
-        text: 'Now the other side. This Ngarama pit holds 9 seeds: enough to travel back along your outer row and round into your inner row. Sow from it and choose kugarama.',
+        text: 'Now the other side. This Ngarama pit holds 9 seeds: enough to travel back along your outer row and round into your inner row. Tap it and choose kugarama.',
         wrong: 'That was the normal direction. Try again and choose kugarama.',
         right: 'Kugarama. Nine seeds went backwards and the last one captured.' },
       { type: 'do', pos: { my: { 0: 3, 2: 3, 3: 3, 6: 3, 8: 2, 13: 2, 14: 3 }, op: { 1: 2, 4: 1, 5: 1, 6: 3, 10: 2, 13: 1, 14: 3 } },
@@ -1577,7 +1625,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     var speed = 1, accel = 1, skipping = false, reduced = false;
     var seedDirty = false;
     var onFrameHooks = [];
-    var REST_Z = 4.9, HOVER_Y = 0.5;
+    var REST_Z = 4.9, HOVER_Y = 0.62;
 
     function init(wrapEl, canvasEl) {
       wrap = wrapEl; canvas = canvasEl;
@@ -1755,7 +1803,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     /* ---- frame loop: renders only while something moves ------------------ */
     function invalidate() { dirty = true; if (!running) { running = true; last = 0; requestAnimationFrame(frame); } }
     function frame(now) {
-      var dt = last ? Math.min(220, now - last) : 16; last = now;   // slow devices skip ahead instead of running in slow motion
+      var dt = last ? Math.min(50, now - last) : 16; last = now;    // a dropped frame slows the motion a little instead of making it jump
       for (var i = tweens.length - 1; i >= 0; i--) {
         var tw = tweens[i];
         tw.t += dt * tw.rate;
@@ -1783,76 +1831,126 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     }
     function wait(ms) { return tween(ms, function () {}, null); }
 
-    /* ---- hand motion ------------------------------------------------------ */
+    /* ---- hand motion ------------------------------------------------------
+       Pace at 1x: while sowing, the hand moves at a steady speed of one pit
+       every SOW_MS, easing in at the start of a lap and out at its last pit,
+       and releases each seed as it passes over that pit. It never stops
+       between seeds. The beats between laps (relay, capture, end of turn) are
+       short pauses so each reads on its own. Long relay chains speed up
+       gently from the fourth lap, never past 2x on top of the chosen speed. */
+    var SOW_MS = 290, SOW_Y = 0.5, WAVE = 0.06, SCOOP_Y = 0.3;
+    /* The hand's origin is above its knuckles. Curled, its fingertips sit about
+       0.4 behind the origin (towards the player) and 0.43 below it, so the
+       origin goes 0.38 beyond a pit's centre to put the fingertips over it,
+       and at SOW_Y the fingertips clear the wood between pits. */
+    var TIP_BACK = 0.38, TIP_DOWN = 0.43;
+    function lapAccel(lap) { return lap <= 3 ? 1 : lap <= 6 ? 1.25 : lap <= 10 ? 1.6 : 2; }
+
     function anchor(H, owner, i) {
       var pp = pitPos(owner, i);
-      return { x: pp.x + 0.02 * H.sign, z: pp.z + 0.2 * H.sign };
+      return { x: pp.x + 0.02 * H.sign, z: pp.z - TIP_BACK * H.sign };
     }
+    function easeInOutCubic(k) { return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; }
+    function easeInOutSine(k) { return 0.5 - 0.5 * Math.cos(Math.PI * k); }
+    /* a reach: travel that is not sowing, on a low arc. Sine easing keeps the
+       peak speed near 1.6 times the average, so long reaches never whip. */
     function handTo(H, x, y, z, ms, hop) {
       var g = H.group.position, x0 = g.x, y0 = g.y, z0 = g.z, tok = ++H.token;
       return tween(ms, function (k) {
         if (H.token !== tok) return;
         g.set(x0 + (x - x0) * k, y0 + (y - y0) * k + (hop || 0) * Math.sin(Math.PI * k), z0 + (z - z0) * k);
-      });
+      }, easeInOutSine);
     }
-    function travelMs(H, x, z, base, per) {
+    function reachMs(H, x, z) {
       var g = H.group.position, d = Math.sqrt((g.x - x) * (g.x - x) + (g.z - z) * (g.z - z));
-      return base + per * d;
+      return d < 0.02 ? 0 : 300 + 115 * Math.min(d, 6);
     }
     function solid(H) { if (H.ghost) { H.ghost = false; H.setOpacity(1); } }
 
+    /* reach a pit if needed, lower into it, close the fingers, lift with the seeds */
     async function scoop(H, owner, i, ctx) {
-      var a = anchor(H, owner, i);
-      await handTo(H, a.x, HOVER_Y, a.z, travelMs(H, a.x, a.z, 90, 85), 0.05);
+      var a = anchor(H, owner, i), g = H.group.position;
+      await handTo(H, a.x, Math.max(g.y, SOW_Y), a.z, reachMs(H, a.x, a.z), 0.12);
       var ids = pitSeeds[owner][i]; pitSeeds[owner][i] = [];
-      var g = H.group.position, from = ids.map(function (id) { var s = seeds[id]; s.token++; return { id: id, x: s.x, y: s.y, z: s.z, tok: s.token }; });
+      var from = ids.map(function (id) { var sd = seeds[id]; sd.token++; return { id: id, x: sd.x, y: sd.y, z: sd.z, tok: sd.token }; });
       var y0 = g.y, c0 = H.cup;
       if (ctx.onPit) ctx.onPit(owner, i, 0);
       if (IG.audio && !skipping) IG.audio.scoop(ids.length);
-      await tween(190, function (k) {
-        g.y = y0 + (0.27 - y0) * k; H.setCup(c0 + (1 - c0) * k);
+      await tween(230, function (k) {
+        g.y = y0 + (SCOOP_Y - y0) * k; H.setCup(c0 + (1 - c0) * k);
+        var px = g.x, pz = g.z + (TIP_BACK + 0.08) * H.sign;   // into the curled fingers
         for (var n = 0; n < from.length; n++) {
-          var f = from[n], s = seeds[f.id];
-          if (s.token !== f.tok) continue;
-          s.x = f.x + (g.x - f.x) * k; s.z = f.z + (g.z + 0.3 * H.sign - f.z) * k; s.y = f.y + (0.22 - f.y) * k; s.s = 1 - k * k;
+          var f = from[n], sd = seeds[f.id];
+          if (sd.token !== f.tok) continue;
+          var q = Math.max(0, (k - 0.25) / 0.75);          // seeds move once the fingers reach them
+          sd.x = f.x + (px - f.x) * q; sd.z = f.z + (pz - f.z) * q; sd.y = f.y + (0.06 - f.y) * q; sd.s = 1 - q * q;
         }
         seedDirty = true;
-      });
+      }, easeInOutCubic);
       for (var n = 0; n < ids.length; n++) H.held.push(ids[n]);
       if (ctx.onHeld) ctx.onHeld(H.seat, H.held.length);
-      await tween(110, function (k) { g.y = 0.27 + (HOVER_Y - 0.27) * k; });
+      await tween(150, function (k) { g.y = SCOOP_Y + (SOW_Y - SCOOP_Y) * k; }, easeOut);
     }
 
-    async function drop(H, owner, i, ctx, n) {
-      var a = anchor(H, owner, i);
-      await handTo(H, a.x, 0.44, a.z, travelMs(H, a.x, a.z, 70, 75), 0.06);
-      H.setCup(0.72);
+    /* one seed leaves the hand over pit i and falls into its resting place */
+    function release(H, owner, ev, ctx) {
       var id = H.held.length ? H.held.pop() : freeIds.pop();
       if (id === undefined) return;
-      var k0 = pitSeeds[owner][i].length, w = slotWorld(owner, i, k0);
+      var i = ev.pit, k0 = pitSeeds[owner][i].length, w = slotWorld(owner, i, k0);
       pitSeeds[owner][i].push(id);
-      var s = seeds[id], tok = ++s.token, g = H.group.position;
-      var sx = g.x, sy = 0.3, sz = g.z - 0.06 * H.sign;
-      s.x = sx; s.y = sy; s.z = sz; s.s = 1; seedDirty = true;
-      if (ctx.onPit) ctx.onPit(owner, i, n);
+      var sd = seeds[id], tok = ++sd.token, g = H.group.position;
+      var sx = g.x, sy = Math.max(0.04, g.y - TIP_DOWN + 0.06), sz = g.z + TIP_BACK * H.sign;   // from the fingertips
+      sd.x = sx; sd.y = sy; sd.z = sz; sd.s = 1; seedDirty = true;
       if (ctx.onHeld) ctx.onHeld(H.seat, H.held.length);
-      // the seed falls on a short arc while the hand already moves on
-      tween(reduced ? 60 : 150, function (k) {
-        if (s.token !== tok) return;
-        s.x = sx + (w.x - sx) * k; s.z = sz + (w.z - sz) * k;
-        s.y = sy + (w.y - sy) * k * k + 0.05 * Math.sin(Math.PI * k);
+      if (ctx.onEvent) ctx.onEvent(ev);
+      tween(reduced ? 60 : 170, function (k) {
+        if (sd.token !== tok) return;
+        sd.x = sx + (w.x - sx) * k; sd.z = sz + (w.z - sz) * k;
+        sd.y = sy + (w.y - sy) * k * k;
         seedDirty = true;
       }, null).then(function () {
+        if (ctx.onPit) ctx.onPit(owner, i, ev.n);
         if (IG.audio && !skipping) IG.audio.click(k0);
-        if (s.token !== tok || reduced) return;
-        tween(110, function (k) { if (s.token !== tok) return; s.y = w.y + 0.028 * Math.sin(Math.PI * k) * (1 - k); seedDirty = true; }, null);
+        if (sd.token !== tok || reduced) return;
+        tween(110, function (k) { if (sd.token !== tok) return; sd.y = w.y + 0.026 * Math.sin(Math.PI * k) * (1 - k); seedDirty = true; }, null);
       });
-      await wait(reduced ? 20 : 55);
+    }
+
+    /* a lap: the hand travels from where it is through each pit in turn, at a
+       steady speed with eased ends, dipping over each pit as its seed drops */
+    function sowLap(H, owner, drops, ctx) {
+      var g = H.group.position, tok = ++H.token, n = drops.length, k;
+      var pts = [{ x: g.x, z: g.z }], cum = [0];
+      for (k = 0; k < n; k++) {
+        var a = anchor(H, owner, drops[k].pit), b = pts[k];
+        pts.push(a); cum.push(cum[k] + Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.z - b.z) * (a.z - b.z)));
+      }
+      var L = cum[n], y0 = g.y, next = 0;
+      var ramp = Math.min(0.38, Math.max(0.12, 0.7 / n)), vmax = 1 / (1 - ramp);
+      var dur = L < 0.02 ? 120 : SOW_MS * L * vmax;
+      function profile(u) {                               // trapezoid: ease in, cruise, ease out
+        if (u < ramp) return vmax * u * u / (2 * ramp);
+        if (u > 1 - ramp) return 1 - vmax * (1 - u) * (1 - u) / (2 * ramp);
+        return vmax * (u - ramp / 2);
+      }
+      return tween(dur, function (u) {
+        if (H.token !== tok) return;
+        var s = u >= 1 ? L : profile(u) * L, j = 0;
+        while (j < n - 1 && s > cum[j + 1]) j++;
+        var seg = cum[j + 1] - cum[j], f = seg > 1e-6 ? Math.min(1, (s - cum[j]) / seg) : 1;
+        var p0 = pts[j], p1 = pts[j + 1];
+        var base = j === 0 ? y0 + (SOW_Y - y0) * f : SOW_Y;
+        g.set(p0.x + (p1.x - p0.x) * f, base + WAVE * Math.sin(Math.PI * f), p0.z + (p1.z - p0.z) * f);
+        var open = f > 0.8 ? (f - 0.8) / 0.2 : (j > 0 && f < 0.15 ? 1 - f / 0.15 : 0);
+        H.setCup(0.84 - 0.24 * open);
+        while (next < n && (u >= 1 || s >= cum[next + 1] - 1e-6)) release(H, owner, drops[next++], ctx);
+      }, null);
     }
 
     /**
      * Animates a slice of an engine event log for `seat`. Hand state carries
      * over between calls, so a move can pause for a decision and continue.
+     * A lift or a capture-sow and the drops that follow it are one lap.
      * ctx: { onPit(owner,i,n), onHeld(seat,n), onEvent(ev) }
      */
     async function playEvents(seat, events, ctx) {
@@ -1862,37 +1960,50 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       if (!flat) { solid(H); H.busy = true; }
       for (var n = 0; n < events.length; n++) {
         var ev = events[n];
-        if (ctx.onEvent) ctx.onEvent(ev);
-        if (flat) { flatEvent(H, seat, ev, ctx); if (!skipping) await new Promise(function (r) { setTimeout(r, ev.t === 'drop' ? 70 / speed : 120 / speed); }); continue; }
+        if (flat) { if (ctx.onEvent) ctx.onEvent(ev); flatEvent(H, seat, ev, ctx); if (!skipping) await new Promise(function (r) { setTimeout(r, ev.t === 'drop' ? 70 / speed : 120 / speed); }); continue; }
+        if (ev.t === 'lift' || ev.t === 'capsow') {
+          if (ctx.onEvent) ctx.onEvent(ev);
+          H.laps = (H.laps || 0) + 1;
+          accel = lapAccel(H.laps);
+          if (ev.t === 'lift') await scoop(H, seat, ev.pit, ctx);
+          else {
+            var o = anchor(H, seat, ev.from);
+            await handTo(H, o.x, SOW_Y + 0.06, o.z, reachMs(H, o.x, o.z), 0.16);
+            await wait(140);
+          }
+          var drops = [];
+          while (n + 1 < events.length && events[n + 1].t === 'drop') drops.push(events[++n]);
+          if (drops.length) await sowLap(H, seat, drops, ctx);
+          continue;
+        }
         switch (ev.t) {
-          case 'lift':
-            H.laps = (H.laps || 0) + 1;
-            accel = H.laps > 12 ? 4 : H.laps > 6 ? 2.6 : H.laps > 3 ? 1.6 : 1;
-            await scoop(H, seat, ev.pit, ctx);
+          case 'drop':                                     // a drop outside a lap: not produced by the engine, kept safe
+            await sowLap(H, seat, [ev], ctx);
             break;
-          case 'drop':
-            await drop(H, seat, ev.pit, ctx, ev.n);
-            break;
-          case 'relay':
-            await tween(80, function (k) { H.group.position.y = 0.44 - 0.1 * Math.sin(Math.PI * k * 0.5); });
+          case 'relay':                                    // the last seed landed on seeds: a beat, then reach in
+            if (ctx.onEvent) ctx.onEvent(ev);
+            await wait(170);
+            await tween(140, function (k) { H.group.position.y = SOW_Y - 0.06 * k; }, easeOut);
             break;
           case 'blocked': case 'pass':
-            await wait(260);
+            if (ctx.onEvent) ctx.onEvent(ev);
+            await wait(320);
             break;
           case 'capture':
-            await wait(340);
+            await wait(260);
+            if (ctx.onEvent) ctx.onEvent(ev);
             if (IG.audio && !skipping) IG.audio.knock();
+            await wait(320);
             await scoop(H, opp, ev.a, ctx);
             await scoop(H, opp, ev.b, ctx);
             break;
-          case 'capsow':
-            var a = anchor(H, seat, ev.from);
-            await handTo(H, a.x, HOVER_Y, a.z, travelMs(H, a.x, a.z, 120, 90), 0.1);
-            await wait(140);
-            break;
           case 'end':
+            if (ctx.onEvent) ctx.onEvent(ev);
+            await wait(200);
             endTurn(H);
             break;
+          default:
+            if (ctx.onEvent) ctx.onEvent(ev);
         }
       }
     }
@@ -1907,13 +2018,13 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     function endTurn(H) {
       H.laps = 0; accel = 1; H.busy = false;
       H.setCup(0.35);
-      handTo(H, H.group.position.x * 0.6, HOVER_Y, H.sign * REST_Z, 420, 0);
+      handTo(H, H.group.position.x * 0.6, HOVER_Y, H.sign * REST_Z, 520, 0);
     }
     function hover(seat, owner, i) {
       var H = hands[seat]; if (!H || flat) return Promise.resolve();
       solid(H);
       var a = anchor(H, owner, i);
-      return handTo(H, a.x, HOVER_Y + 0.08, a.z, travelMs(H, a.x, a.z, 160, 90), 0.08);
+      return handTo(H, a.x, HOVER_Y + 0.08, a.z, Math.max(200, reachMs(H, a.x, a.z)), 0.08);
     }
     function rest(seat) { var H = hands[seat]; if (H && !flat) endTurn(H); }
     /** translucent hand showing where the other player is hovering */
@@ -1936,6 +2047,11 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     return {
       init: init, project: project, projectPit: projectPit, pitRadiusU: pitRadiusU,
       setPits: setPits, counts: counts, playEvents: playEvents, hover: hover, rest: rest, ghost: ghost, handScreen: handScreen,
+      /* for tests and tools: where a hand is right now */
+      handState: function (seat) {
+        var H = hands[seat]; if (!H || flat) return null;
+        var g = H.group.position; return { x: g.x, y: g.y, z: g.z, cup: H.cup, held: H.held.length, busy: !!H.busy };
+      },
       wait: wait, invalidate: invalidate,
       onFrame: function (fn) { onFrameHooks.push(fn); },
       isFlat: function () { return flat; },
@@ -2330,13 +2446,13 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     return { v: 1, xp: 0, cows: 50, rating: 1200, rated: 0, streak: { n: 0, day: '' }, best: 0, badges: {}, lessons: {},
       stats: { games: 0, wins: 0, captures: 0, puzzles: 0 }, won: 0, tables: {}, missions: { day: '', items: [] },
       login: { day: '', idx: 0 }, topup: '', daily: {}, look: { wood: 'walnut', seed: 'black', carve: false, bracelet: '' },
-      ratedKeys: [], updatedAt: 0 };
+      ratedKeys: [], seen: {}, updatedAt: 0 };
   }
   function adopt(raw) {       // stored data is untrusted: copy known fields with type checks
     var d = fresh(); if (!raw || typeof raw !== 'object') return d;
     ['xp', 'cows', 'rating', 'rated', 'best', 'won', 'updatedAt'].forEach(function (k) { if (typeof raw[k] === 'number' && isFinite(raw[k])) d[k] = Math.max(0, Math.round(raw[k])); });
     if (typeof raw.topup === 'string') d.topup = raw.topup.slice(0, 10);
-    ['badges', 'lessons', 'tables', 'daily', 'stats'].forEach(function (k) {
+    ['badges', 'lessons', 'tables', 'daily', 'stats', 'seen'].forEach(function (k) {
       if (raw[k] && typeof raw[k] === 'object') for (var x in raw[k]) if (/^[\w:.-]{1,40}$/.test(x) && (typeof raw[k][x] === 'number' || typeof raw[k][x] === 'boolean')) d[k][x] = raw[k][x];
     });
     if (raw.streak && typeof raw.streak.n === 'number') d.streak = { n: Math.max(0, raw.streak.n | 0), day: String(raw.streak.day || '').slice(0, 10) };
@@ -2536,6 +2652,10 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     }, function () { return null; });
   };
 
+  /* ---- one-time explainers (guteba, kugarama) -------------------------------- */
+  P.hasSeen = function (k) { return !!P.data.seen[k]; };
+  P.markSeen = function (k) { if (P.data.seen[k]) return; P.data.seen[k] = true; save(); };
+
   /* ---- cosmetics ------------------------------------------------------------ */
   P.owns = function (c) { return P.level().n >= c.level; };
   P.wear = function (id) {
@@ -2596,6 +2716,9 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
       var t = e.target.closest('.pit'); if (t) IG.game.hoverPit(+t.dataset.p, +t.dataset.i);
     });
     B.pits.addEventListener('pointerleave', function () { IG.game.hoverPit(null, null); });
+    U.$('#chooser').addEventListener('click', function (e) {
+      var t = e.target.closest('[data-dir]'); if (t) IG.game.chooseDirection(t.dataset.dir);
+    });
     B.pits.addEventListener('focusin', function (e) {
       var t = e.target.closest('.pit'); if (!t) return;
       U.$$('.pit', B.pits).forEach(function (x) { x.tabIndex = -1; }); t.tabIndex = 0;
@@ -2714,40 +2837,123 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     setTimeout(function () { if (B.fx.innerHTML === out) B.fx.innerHTML = ''; }, 1500);
   };
 
-  /* a choice in the middle of a move: the hand hovers, the options sit beside it */
+  /* a capture decision in optional mode: the hand hovers, the options sit beside it */
   B.ask = function (pending, seat, options) {
     return new Promise(function (resolve) {
-      var q = V.projectPit(seat, pending.pit), html = '';
-      // clockwise from a Nteba pit is guteba, from an Ngarama pit kugarama; the normal direction has no special name
-      var rev = pending.name === 'kugarama' ? 'Kugarama' : 'Guteba';
-      var TEXT = {
-        ccw: ['Normal way', 'anticlockwise'], cw: [rev, 'clockwise, to capture'],
-        take: ['Kurasa', 'capture the cows'], pass: ['Ndahise', 'I pass, and relay']
-      };
-      html += '<p class="prompt-q">' + (pending.type === 'capture' ? 'Capture here?' : pending.kind === 'capsow' ? 'Sow the cows which way?' : 'Which way?') + '</p>';
+      var TEXT = { take: ['Kurasa', 'capture the cows'], pass: ['Ndahise', 'I pass, and relay'] }, html = '';
+      html += '<p class="prompt-q">Capture here?</p>';
       options.forEach(function (o) {
         html += '<button type="button" class="btn btn-small" data-choice="' + o + '"><b>' + TEXT[o][0] + '</b><span>' + TEXT[o][1] + '</span></button>';
       });
-      B.prompt.innerHTML = html;
-      B.prompt.hidden = false;
-      var below = q.v < 0.5;
-      B.prompt.style.left = U.clamp(q.u * 100, 22, 78) + '%';
-      B.prompt.style.top = (q.v * 100) + '%';
-      B.prompt.classList.toggle('below', below);
-      var first = U.$('button', B.prompt); if (first && document.activeElement && document.activeElement.closest && document.activeElement.closest('#pits')) first.focus();
+      placePrompt(seat, pending.pit, html, '');
       B.prompt.onclick = function (e) {
         var t = e.target.closest('[data-choice]'); if (!t) return;
-        B.prompt.hidden = true; B.prompt.onclick = null;
+        B.prompt.hidden = true; B.prompt.onclick = null; B.cancelAsk = null;
         resolve(t.dataset.choice);
       };
       B.cancelAsk = function () { B.prompt.hidden = true; B.prompt.onclick = null; B.cancelAsk = null; resolve(null); };
     });
   };
+  function placePrompt(seat, pit, html, cls) {
+    var q = V.projectPit(seat, pit);
+    B.prompt.className = 'prompt' + (cls ? ' ' + cls : '');
+    B.prompt.innerHTML = html;
+    B.prompt.hidden = false;
+    B.prompt.style.left = U.clamp(q.u * 100, 24, 76) + '%';
+    B.prompt.style.top = (q.v * 100) + '%';
+    B.prompt.classList.toggle('below', q.v < 0.5);
+    var first = U.$('button', B.prompt);
+    if (first && document.activeElement && document.activeElement.closest && document.activeElement.closest('#pits')) first.focus();
+  }
+
+  /* ---- Nteba and Ngarama: a one-time explainer, then a choice of two arrows ---- */
+  var ICON_CCW = '<svg class="dir-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
+  var ICON_CW = '<svg class="dir-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>';
+  var KIND = {
+    guteba: { pit: 'Nteba', article: 'a', side: 'left', move: 'guteba', Move: 'Guteba', mark: 'warn' },
+    kugarama: { pit: 'Ngarama', article: 'an', side: 'right', move: 'kugarama', Move: 'Kugarama', mark: 'alt' }
+  };
+  B.kind = function (name) { return KIND[name]; };
+
+  /* shown once per kind, the first time the move is really available to the player */
+  B.explain = function (ch) {
+    var K = KIND[ch.name], R = G.state.rules;
+    var pits = (ch.name === 'guteba' ? R.ntebaPits : R.ngaramaPits).map(function (i) { return [ch.seat, i, K.mark]; });
+    var title = ch.phase === 'relay' ? 'Your move has reached ' + K.article + ' ' + K.pit + ' pit' :
+      ch.phase === 'capsow' ? 'Your cows start from ' + K.article + ' ' + K.pit + ' pit' : 'This is ' + K.article + ' ' + K.pit + ' pit';
+    var html = '<p class="explain-kicker">Special pit</p><p class="explain-title">' + title + '</p>' +
+      '<p>You have two ' + K.pit + ' pits: your outer ' + K.side + ' corner pit and your second inner pit from the ' + K.side + '. They are ringed on the board.</p>' +
+      '<p>From here you may sow clockwise. That is called ' + K.move + '.</p>' +
+      '<p>You may do it only when that lap captures. Right now it does.</p>' +
+      '<button type="button" class="btn btn-small btn-primary" data-got="1">Got it</button>';
+    var keep = B.marks;
+    B.clearFx(); B.setMarks(pits);
+    placePrompt(ch.seat, ch.pit, html, 'explain');
+    return new Promise(function (resolve) {
+      function close(v) { B.prompt.hidden = true; B.prompt.onclick = null; B.cancelExplain = null; B.marks = keep; B.refresh(); resolve(v); }
+      B.prompt.onclick = function (e) { if (e.target.closest('[data-got]')) close(true); };
+      B.cancelExplain = function () { close(false); };
+    });
+  };
+
+  /* the paths of both laps, each ending in an arrowhead, with buttons under the board */
+  function lapPath(seat, from, pits, cls, head) {
+    var pts = [B.xy(seat, from)].concat(pits.map(function (i) { return B.xy(seat, i); })), d = '', k, out = '';
+    for (k = 0; k < pts.length; k++) d += (k ? ' L' : 'M') + pts[k].x.toFixed(1) + ' ' + pts[k].y.toFixed(1);
+    out += svg('path', { d: d, 'class': 'fx-path ' + cls });
+    for (k = 1; k < pts.length - 1; k++) out += svg('circle', { cx: pts[k].x.toFixed(1), cy: pts[k].y.toFixed(1), r: 5, 'class': 'fx-dot ' + cls });
+    if (pts.length > 1) {
+      var a = pts[pts.length - 2], b = pts[pts.length - 1], dx = b.x - a.x, dy = b.y - a.y, L = Math.sqrt(dx * dx + dy * dy) || 1;
+      var ux = dx / L, uy = dy / L, tipx = b.x - ux * head, tipy = b.y - uy * head, w = 11, len = 20;
+      var p1 = (tipx - ux * len + uy * w).toFixed(1) + ',' + (tipy - uy * len - ux * w).toFixed(1);
+      var p2 = (tipx - ux * len - uy * w).toFixed(1) + ',' + (tipy - uy * len + ux * w).toFixed(1);
+      out += '<polygon class="fx-head ' + cls + '" points="' + tipx.toFixed(1) + ',' + tipy.toFixed(1) + ' ' + p1 + ' ' + p2 + '"/>';
+    }
+    return out;
+  }
+  B.showChoice = function (ch, branches, full) {
+    var r = IG.DIM.pitR / IG.DIM.viewW * VW, K = KIND[ch.name], out = '', s0 = B.xy(ch.seat, ch.pit);
+    branches.forEach(function (b) {
+      var cls = b.dir === 'cw' ? 'fx-' + ch.name : 'fx-normal';
+      out += lapPath(ch.seat, ch.pit, full ? b.pits : b.pits.slice(0, 1), cls, full ? r * 0.42 : r * 0.1);
+      if (full && b.capA !== undefined) [b.capA, b.capB].forEach(function (i) {
+        var q = B.xy(1 - ch.seat, i);
+        out += svg('circle', { cx: q.x.toFixed(1), cy: q.y.toFixed(1), r: (r + 2).toFixed(1), 'class': 'fx-cap' });
+      });
+    });
+    out += svg('circle', { cx: s0.x.toFixed(1), cy: s0.y.toFixed(1), r: (r + 3).toFixed(1), 'class': 'fx-start' });
+    B.fx.innerHTML = out;
+    var html = '';
+    branches.forEach(function (b) {
+      var cw = b.dir === 'cw', title = cw ? K.Move : 'Normal way', sub;
+      if (!full) sub = cw ? 'clockwise' : 'anticlockwise';
+      else if (b.after === 'capture') sub = (cw ? 'clockwise, ' : '') + 'captures ' + U.plural(b.caught, 'cow');
+      else if (b.after === 'relay') sub = 'lands on seeds, keeps going';
+      else if (b.after === 'choice') sub = 'reaches a capture you can take';
+      else sub = 'ends in ' + (b.end >= 8 ? 'inner' : 'outer') + ' pit ' + E.pitNumber(b.end);
+      html += '<button type="button" class="btn choice ' + (cw ? 'choice-' + ch.name : 'choice-normal') + '" data-dir="' + b.dir + '">' + (cw ? ICON_CW : ICON_CCW) +
+        '<span><b>' + title + '</b><small>' + sub + '</small></span></button>';
+    });
+    var bar = U.$('#chooser');
+    bar.innerHTML = html; bar.hidden = false;
+    if (document.activeElement && document.activeElement.closest && document.activeElement.closest('#pits')) U.$('button', bar).focus();
+  };
+  B.hideChoice = function () { var bar = U.$('#chooser'); bar.hidden = true; bar.innerHTML = ''; B.clearFx(); };
 
   /* ========================================================================
      GAME CONTROLLER
      ======================================================================== */
-  var G = IG.game = { cfg: null, state: null, moves: [], history: [], busy: false, over: true, gen: 0, selected: null, legal: [], log: [], nudge: null, analysis: null, queue: [] };
+  var G = IG.game = { cfg: null, state: null, moves: [], history: [], busy: false, over: true, gen: 0, selected: null, legal: [], log: [], nudge: null, analysis: null, queue: [], choosing: null };
+
+  /* close any open question on the board: capture prompt, explainer, direction choice */
+  function closeQuestions() {
+    if (B.cancelAsk) B.cancelAsk();
+    if (B.cancelExplain) B.cancelExplain();
+    if (G.choosing) { var c = G.choosing; G.choosing = null; B.hideChoice(); if (c.resolve) c.resolve(null); }
+  }
+  G.closeQuestions = closeQuestions;
+  /* is the board asking the player something right now? */
+  G.asking = function () { return !!(G.choosing || B.cancelAsk || B.cancelExplain); };
 
   function seatName(seat) { return G.cfg.seats[seat].name || (seat === 0 ? 'Bottom' : 'Top'); }
   function say(text) { var el = U.$('#say'); if (el) el.textContent = text || ''; }
@@ -2759,7 +2965,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
    */
   G.start = function (cfg) {
     G.gen++;
-    if (B.cancelAsk) B.cancelAsk();
+    closeQuestions();
     cfg.hooks = cfg.hooks || {};
     cfg.bottom = cfg.bottom === 1 ? 1 : 0;
     G.cfg = cfg;
@@ -2779,7 +2985,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
 
   G.stop = function () {
     G.gen++;
-    if (B.cancelAsk) B.cancelAsk();
+    closeQuestions();
     G.over = true; G.busy = false; G.selected = null; G.nudge = null;
     V.skip(true);
     setTimeout(function () { V.skip(false); V.rest(0); V.rest(1); }, 40);
@@ -2819,15 +3025,82 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     if (info.relays) s += 'Relays ' + U.times(info.relays) + '. ';
     if (info.captured) s += 'Captures ' + U.plural(info.captured, 'cow') + '. ';
     s += 'Ends in ' + (info.end >= 8 ? 'inner' : 'outer') + ' pit ' + E.pitNumber(info.end) + '.';
-    if (info.choice) s += ' You will be asked which way to sow.';
+    if (info.choice) s += ' Partway through, you choose which way to sow.';
     return s + ' Tap again to sow.';
   }
 
-  G.cancelSelect = function () { if (G.selected !== null) { G.selected = null; B.clearFx(); B.refresh(); say(''); } };
+  G.cancelSelect = function () {
+    if (G.choosing && G.choosing.ch.phase !== 'start') return;          // a move in progress must be finished
+    if (B.cancelExplain || G.choosing) closeQuestions();
+    if (G.selected !== null) { G.selected = null; B.clearFx(); B.refresh(); say(''); }
+  };
+
+  /* both ways a direction decision can go: the pits of the lap it starts, and what its last seed does */
+  function branches(state, start, prefix, from, options) {
+    return options.map(function (o) {
+      var r = E.playTurn(state, start, prefix.concat(o), true), evs = r.events || [], lap = [], k = from;
+      while (k < evs.length && evs[k].t !== 'drop') k++;
+      while (k < evs.length && evs[k].t === 'drop') lap.push(evs[k++].pit);
+      var nx = evs[k] || null, b = { dir: o, pits: lap, end: lap.length ? lap[lap.length - 1] : null, caught: 0 };
+      b.after = nx ? nx.t : r.status === 'pending' ? 'choice' : 'end';
+      if (nx && nx.t === 'capture') { b.caught = nx.n; b.capA = nx.a; b.capB = nx.b; }
+      return b;
+    });
+  }
+  /* options at this decision that lead to a legal, finite move */
+  function legalOptions(start, prefix, options) {
+    return options.filter(function (o) {
+      return G.legal.some(function (m) {
+        if (m.start !== start || m.decisions.length <= prefix.length || m.decisions[prefix.length] !== o) return false;
+        for (var k = 0; k < prefix.length; k++) if (m.decisions[k] !== prefix[k]) return false;
+        return true;
+      });
+    });
+  }
+  /* a choice of direction when the move starts from this pit, or null */
+  G.startChoice = function (i) {
+    var st = G.state, r = E.playTurn(st, i, [], true);
+    if (r.status !== 'pending' || r.pending.type !== 'direction' || r.pending.kind !== 'start') return null;
+    var opts = legalOptions(i, [], r.pending.options);
+    return opts.length > 1 ? { seat: st.turn, pit: i, name: r.pending.name, phase: 'start', start: i, prefix: [], done: 0, options: opts } : null;
+  };
+  /* explain the pit the first time, then ask; resolves 'ccw', 'cw', or null if it was closed */
+  async function offerChoice(ch) {
+    var gen = G.gen, K = B.kind(ch.name);
+    var br = branches(G.state, ch.start, ch.prefix, ch.done, ch.options);
+    if (G.cfg.mode !== 'lesson' && IG.progress && !IG.progress.hasSeen(ch.name)) {
+      say('');
+      var okd = await B.explain(ch);
+      if (!okd || gen !== G.gen) return null;
+      IG.progress.markSeen(ch.name);
+    }
+    return new Promise(function (resolve) {
+      G.choosing = { ch: ch, br: br, resolve: resolve };
+      B.showChoice(ch, br, !G.cfg.noPreview);
+      say('Two ways to sow from this ' + K.pit + ' pit: the normal way, or ' + K.move + ' clockwise. Tap one of the buttons, or a pit on its arrow.');
+    }).then(function (c) { if (G.choosing) { G.choosing = null; B.hideChoice(); } return c; });
+  }
+  /* a tap while the choice is open: a pit on exactly one of the two paths chooses that path */
+  function tapWhileChoosing(p, i) {
+    var C = G.choosing;
+    if (p === C.ch.seat) {
+      var hit = C.br.filter(function (b) { return (G.cfg.noPreview ? b.pits.slice(0, 1) : b.pits).indexOf(i) >= 0; });
+      if (hit.length === 1) { C.resolve(hit[0].dir); return true; }
+    }
+    if (C.ch.phase !== 'start' || (p === C.ch.seat && i === C.ch.pit)) {
+      say('Choose a direction to carry on: tap one of the two buttons under the board.');
+      return true;
+    }
+    G.cancelSelect();                                                   // another pit: choose that one instead
+    return false;
+  }
+  G.chooseDirection = function (dir) { if (G.choosing) G.choosing.resolve(dir); };
 
   G.tap = function (p, i) {
     var st = G.state, cfg = G.cfg;
     if (!st || G.over) return;
+    if (B.cancelExplain) { say('Read the note, then tap Got it.'); return; }
+    if (G.choosing && tapWhileChoosing(p, i)) return;
     if (G.busy) return;
     var seat = st.turn, S = cfg.seats[seat];
     if (S.kind !== 'human') { say('Wait for your turn.'); return; }
@@ -2836,6 +3109,12 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     if (why) { G.cancelSelect(); say(why); IG.audio.tick(); return; }
     if (G.selected === i) { G.humanMove(i); return; }
     G.selected = i; IG.audio.tick();
+    var ch = G.startChoice(i);
+    if (ch) {
+      B.refresh();
+      offerChoice(ch).then(function (dir) { if (dir && G.selected === i && G.state === st) G.humanMove(i, [dir]); });
+      return;
+    }
     if (cfg.noPreview) { B.clearFx(); say('Tap again to sow.'); }
     else {
       var info = G.previewInfo(i);
@@ -2867,8 +3146,8 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
   }
 
   /* a human move: animate as far as each decision, ask, continue */
-  G.humanMove = async function (start) {
-    var gen = G.gen, before = G.state, seat = before.turn, dec = [], done = 0, r;
+  G.humanMove = async function (start, preset) {
+    var gen = G.gen, before = G.state, seat = before.turn, dec = (preset || []).slice(), done = 0, r;
     G.busy = true; G.selected = null; B.clearFx(); B.refresh(); say('');
     if (G.cfg.hooks.onHover) G.cfg.hooks.onHover(null);
     var mine = G.legal.filter(function (m) { return m.start === start; });
@@ -2890,9 +3169,14 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
         var choice = opts[0];
         if (opts.length > 1) {
           V.hover(seat, seat, r.pending.pit);
-          if (r.pending.type === 'capture') B.setMarks([[1 - seat, 23 - r.pending.pit], [1 - seat, r.pending.pit - 8]], 'warn');
-          choice = await B.ask(r.pending, seat, opts);
-          B.marks = {};
+          if (r.pending.type === 'capture') {
+            B.setMarks([[1 - seat, 23 - r.pending.pit], [1 - seat, r.pending.pit - 8]], 'warn');
+            choice = await B.ask(r.pending, seat, opts);
+            B.marks = {};
+          } else {
+            choice = await offerChoice({ seat: seat, pit: r.pending.pit, name: r.pending.name, phase: r.pending.kind === 'capsow' ? 'capsow' : 'relay',
+              start: start, prefix: dec, done: done, options: opts });
+          }
           if (gen !== G.gen || choice === null) return;
         }
         dec = dec.concat(choice);
@@ -3040,7 +3324,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
   G.resign = function (seat) {
     if (G.over || !G.cfg || G.cfg.solo) return;
     G.gen++;
-    if (B.cancelAsk) B.cancelAsk();
+    closeQuestions();
     V.skip(true);
     var gen = G.gen;
     setTimeout(function () {
@@ -3090,7 +3374,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     if (!G.canUndo()) return;
     G.gen++;
     var gen = G.gen;
-    if (B.cancelAsk) B.cancelAsk();
+    closeQuestions();
     while (G.history.length) {
       var st = G.history.pop(); G.moves.pop(); G.log.pop();
       if (G.cfg.seats[st.turn].kind === 'human') { G.state = st; break; }
@@ -3112,7 +3396,8 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     IG.ai.request(st, 'hint').then(function (res) {
       if (gen !== G.gen || G.state !== st || !res) return;
       B.setGlow([[st.turn, res.move.start]]);
-      say('Try the glowing pit: ' + (res.move.start >= 8 ? 'inner' : 'outer') + ' pit ' + E.pitNumber(res.move.start) + '.');
+      var rk = res.move.decisions[0] === 'cw' ? E.reverseKind(st.rules, res.move.start) : null;
+      say('Try the glowing pit: ' + (res.move.start >= 8 ? 'inner' : 'outer') + ' pit ' + E.pitNumber(res.move.start) + (rk ? ', then choose ' + rk + '.' : '.'));
       setTimeout(function () { if (G.state === st) B.setGlow([]); }, 4000);
     });
   };
@@ -3200,6 +3485,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
         L.gained = IG.progress.data.lessons[L.lesson.id] ? 5 : 40;
         IG.progress.event('lesson', { id: L.lesson.id });
         IG.audio.good();
+        if (L.lesson.id === 'L5') { IG.progress.markSeen('guteba'); IG.progress.markSeen('kugarama'); }   // the lesson was the explanation
         if (L.lesson.id === 'L5' && IG.settings.get('rulesMode') === 'learn') {
           IG.settings.set('rulesMode', 'traditional');
           IG.toast('<b>Rules mode: Traditional</b><span>Guteba and kugarama are now on in your games. Change it in Settings.</span>');
@@ -4219,7 +4505,7 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     var cfg = G.cfg; if (!cfg) return '';
     var h = confirmBox() + head(esc(cfg.eyebrow || ''), esc(cfg.title || 'Game'), '');
     if (UI.score[0] + UI.score[1] > 0) h += '<p class="score"><span>Points (igitego)</span><b>' + UI.score[0] + '</b><i>:</i><b>' + UI.score[1] + '</b></p>';
-    if (!G.over && G.moves.length < 2 && cfg.rules.openingNoCaptureMoves) h += '<p class="muted">Opening: the first move of each player cannot capture.</p>';
+    if (!G.over && G.state.ply < cfg.rules.openingNoCaptureMoves) h += '<p class="muted">Opening: the first move of each player cannot capture.</p>';
     h += nudgeBlock();
     if (G.over && G.result) {
       var w = G.result.winner, ai = cfg.mode === 'ai';
@@ -4400,7 +4686,8 @@ details[open] { display: flex; flex-direction: column; gap: 10px; }
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
       if (UI.confirm) { UI.confirm = null; UI.render(); }
-      else if (UI.full && U.$('#prompt').hidden) UI.setFull(false);
+      else if (G.asking()) G.cancelSelect();
+      else if (UI.full) UI.setFull(false);
     });
     // Escape or the browser's own control ended real full screen: follow it
     ['fullscreenchange', 'webkitfullscreenchange'].forEach(function (ev) {
