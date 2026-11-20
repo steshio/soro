@@ -387,6 +387,7 @@ module.exports.motion = async function (b, t) {
     window.IG.board.setHeld = function (seat, n) { if (seat === 0 && n < held) window.__drops.push({ t: performance.now(), p: 0, n: 1 }); held = n; return sh.apply(this, arguments); };
   });
   await pg.clock.runFor(1500);
+  const clip = await pg.evaluate('(function(){var r=document.querySelector("#stage").getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),width:Math.round(r.width),height:Math.round(Math.min(r.height,720))}})()');
   await pg.clock.pauseAt(Date.now() + 60000);
   await pg.evaluate(() => { window.__t0 = performance.now(); window.__drops = []; window.__done = false; window.IG.game.perform({ start: 4, decisions: [] }).then(() => { window.__done = true; }); });
   const samples = [];
@@ -395,7 +396,7 @@ module.exports.motion = async function (b, t) {
     await pg.clock.runFor(video ? 33 : 16);
     const s = await pg.evaluate('(function(){var h=window.IG.view.handState(0);return {t:performance.now()-window.__t0,x:h.x,y:h.y,z:h.z,held:h.held,busy:h.busy,done:window.__done}})()');
     samples.push(s);
-    if (video) await pg.locator('#board').screenshot({ path: path.join(dir, String(frame++).padStart(4, '0') + '.png') });
+    if (video) await pg.screenshot({ path: path.join(dir, String(frame++).padStart(4, '0') + '.png'), clip, animations: 'allow', caret: 'initial' });
     if (s.done && !s.busy && k > 10 && Math.abs(s.z - 4.9) < 0.05) break;
   }
   // the moments seeds leave the hand
