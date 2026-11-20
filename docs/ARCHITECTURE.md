@@ -27,6 +27,8 @@ tap -> IG.game -> IgisoroEngine.playTurn / applyMove -> event log -> IG.view.pla
 - **The engine is pure.** State in, state and events out. It knows nothing about the page.
 - **The renderer never derives rules.** It animates the event log. After each move the controller compares the view's seed counts with the engine state and snaps the view if they ever differ.
 - **A move can pause for a decision.** `playTurn` returns `pending` with the options; the controller animates the events so far, asks, appends the choice and runs it again. Events are deterministic, so the already animated prefix is skipped.
+- **Direction choices are asked before they are animated.** For a Nteba or Ngarama pit, `G.startChoice(pit)` finds a choice at the very start of a move, and `branches()` plays both options through the engine to get each lap's pits. The board draws both laps as arrows; the move starts only once a direction is chosen. A choice later in the move (a relay or the cows reaching such a pit) uses the same chooser while the hand hovers. The first time a player meets each kind, `B.explain` shows a note first; `IG.progress` remembers it in `seen`.
+- **A lap is one movement.** `playEvents` treats a `lift` or `capsow` and the drops after it as one lap: the hand travels through the lap's pits at a steady pace with eased ends (`sowLap`) and releases each seed as it passes over its pit. Relay, capture and end of turn are short beats between laps. Pace constants (`SOW_MS`, reach times, `lapAccel`) sit together at the top of the hand-motion section of `render.js`.
 
 ## Modules
 
@@ -87,6 +89,7 @@ The newer of the local and remote profile wins on load. Only user ids are stored
 | Rules | `test/engine.test.js`: hand-built positions, loop guard, 2,100 random games checking conservation, legality, replay and seat symmetry |
 | Content | `test/content.test.js`: every Learn position has exactly the intended solution; daily puzzles exist, are deterministic and solvable |
 | AI | `test/ai.smoke.js`: stronger settings beat weaker ones |
-| Page | `tools/preview.js` with `tools/preview-scenarios.js`: headless Chromium plays a game, walks all lessons, solves the daily puzzle, plays by keyboard, and runs two pages against an in-memory stand-in for the claude.ai runtime |
+| Page | `tools/preview.js` with `tools/preview-scenarios.js`: headless Chromium plays a game, walks all lessons, solves the daily puzzle, plays by keyboard, exercises the special-pit chooser, and runs two pages against an in-memory stand-in for the claude.ai runtime |
+| Motion | the `motion` scenario runs on Playwright's fake clock and reports seed-to-seed timing, still frames mid-lap and the largest jump per frame; `tools/motion-video.sh` turns the same run into a true-speed video |
 
 The sandbox used for the first build renders WebGL in software, so scenarios run the animation at a high test speed and use real speed only for screenshots.
