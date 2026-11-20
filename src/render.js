@@ -582,7 +582,7 @@
     /* ---- frame loop: renders only while something moves ------------------ */
     function invalidate() { dirty = true; if (!running) { running = true; last = 0; requestAnimationFrame(frame); } }
     function frame(now) {
-      var dt = last ? Math.min(220, now - last) : 16; last = now;   // slow devices skip ahead instead of running in slow motion
+      var dt = last ? Math.min(50, now - last) : 16; last = now;    // a dropped frame slows the motion a little instead of making it jump
       for (var i = tweens.length - 1; i >= 0; i--) {
         var tw = tweens[i];
         tw.t += dt * tw.rate;
@@ -610,76 +610,121 @@
     }
     function wait(ms) { return tween(ms, function () {}, null); }
 
-    /* ---- hand motion ------------------------------------------------------ */
+    /* ---- hand motion ------------------------------------------------------
+       Pace at 1x: while sowing, the hand moves at a steady speed of one pit
+       every SOW_MS, easing in at the start of a lap and out at its last pit,
+       and releases each seed as it passes over that pit. It never stops
+       between seeds. The beats between laps (relay, capture, end of turn) are
+       short pauses so each reads on its own. Long relay chains speed up
+       gently from the fourth lap, never past 2x on top of the chosen speed. */
+    var SOW_MS = 290, SOW_Y = 0.4, WAVE = 0.06, SCOOP_Y = 0.24;
+    function lapAccel(lap) { return lap <= 3 ? 1 : lap <= 6 ? 1.25 : lap <= 10 ? 1.6 : 2; }
+
     function anchor(H, owner, i) {
       var pp = pitPos(owner, i);
-      return { x: pp.x + 0.02 * H.sign, z: pp.z + 0.2 * H.sign };
+      return { x: pp.x + 0.02 * H.sign, z: pp.z + 0.16 * H.sign };
     }
+    function easeInOutCubic(k) { return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; }
+    function easeInOutSine(k) { return 0.5 - 0.5 * Math.cos(Math.PI * k); }
+    /* a reach: travel that is not sowing, on a low arc. Sine easing keeps the
+       peak speed near 1.6 times the average, so long reaches never whip. */
     function handTo(H, x, y, z, ms, hop) {
       var g = H.group.position, x0 = g.x, y0 = g.y, z0 = g.z, tok = ++H.token;
       return tween(ms, function (k) {
         if (H.token !== tok) return;
         g.set(x0 + (x - x0) * k, y0 + (y - y0) * k + (hop || 0) * Math.sin(Math.PI * k), z0 + (z - z0) * k);
-      });
+      }, easeInOutSine);
     }
-    function travelMs(H, x, z, base, per) {
+    function reachMs(H, x, z) {
       var g = H.group.position, d = Math.sqrt((g.x - x) * (g.x - x) + (g.z - z) * (g.z - z));
-      return base + per * d;
+      return d < 0.02 ? 0 : 300 + 115 * Math.min(d, 6);
     }
     function solid(H) { if (H.ghost) { H.ghost = false; H.setOpacity(1); } }
 
+    /* reach a pit if needed, lower into it, close the fingers, lift with the seeds */
     async function scoop(H, owner, i, ctx) {
-      var a = anchor(H, owner, i);
-      await handTo(H, a.x, HOVER_Y, a.z, travelMs(H, a.x, a.z, 90, 85), 0.05);
+      var a = anchor(H, owner, i), g = H.group.position;
+      await handTo(H, a.x, Math.max(g.y, SOW_Y), a.z, reachMs(H, a.x, a.z), 0.12);
       var ids = pitSeeds[owner][i]; pitSeeds[owner][i] = [];
-      var g = H.group.position, from = ids.map(function (id) { var s = seeds[id]; s.token++; return { id: id, x: s.x, y: s.y, z: s.z, tok: s.token }; });
+      var from = ids.map(function (id) { var sd = seeds[id]; sd.token++; return { id: id, x: sd.x, y: sd.y, z: sd.z, tok: sd.token }; });
       var y0 = g.y, c0 = H.cup;
       if (ctx.onPit) ctx.onPit(owner, i, 0);
       if (IG.audio && !skipping) IG.audio.scoop(ids.length);
-      await tween(190, function (k) {
-        g.y = y0 + (0.27 - y0) * k; H.setCup(c0 + (1 - c0) * k);
+      await tween(230, function (k) {
+        g.y = y0 + (SCOOP_Y - y0) * k; H.setCup(c0 + (1 - c0) * k);
+        var px = g.x, pz = g.z + 0.26 * H.sign;            // under the palm
         for (var n = 0; n < from.length; n++) {
-          var f = from[n], s = seeds[f.id];
-          if (s.token !== f.tok) continue;
-          s.x = f.x + (g.x - f.x) * k; s.z = f.z + (g.z + 0.3 * H.sign - f.z) * k; s.y = f.y + (0.22 - f.y) * k; s.s = 1 - k * k;
+          var f = from[n], sd = seeds[f.id];
+          if (sd.token !== f.tok) continue;
+          var q = Math.max(0, (k - 0.25) / 0.75);          // seeds move once the fingers reach them
+          sd.x = f.x + (px - f.x) * q; sd.z = f.z + (pz - f.z) * q; sd.y = f.y + (0.18 - f.y) * q; sd.s = 1 - q * q;
         }
         seedDirty = true;
-      });
+      }, easeInOutCubic);
       for (var n = 0; n < ids.length; n++) H.held.push(ids[n]);
       if (ctx.onHeld) ctx.onHeld(H.seat, H.held.length);
-      await tween(110, function (k) { g.y = 0.27 + (HOVER_Y - 0.27) * k; });
+      await tween(150, function (k) { g.y = SCOOP_Y + (SOW_Y - SCOOP_Y) * k; }, easeOut);
     }
 
-    async function drop(H, owner, i, ctx, n) {
-      var a = anchor(H, owner, i);
-      await handTo(H, a.x, 0.44, a.z, travelMs(H, a.x, a.z, 70, 75), 0.06);
-      H.setCup(0.72);
+    /* one seed leaves the hand over pit i and falls into its resting place */
+    function release(H, owner, ev, ctx) {
       var id = H.held.length ? H.held.pop() : freeIds.pop();
       if (id === undefined) return;
-      var k0 = pitSeeds[owner][i].length, w = slotWorld(owner, i, k0);
+      var i = ev.pit, k0 = pitSeeds[owner][i].length, w = slotWorld(owner, i, k0);
       pitSeeds[owner][i].push(id);
-      var s = seeds[id], tok = ++s.token, g = H.group.position;
-      var sx = g.x, sy = 0.3, sz = g.z - 0.06 * H.sign;
-      s.x = sx; s.y = sy; s.z = sz; s.s = 1; seedDirty = true;
-      if (ctx.onPit) ctx.onPit(owner, i, n);
+      var sd = seeds[id], tok = ++sd.token, g = H.group.position;
+      var sx = g.x, sy = Math.min(0.3, g.y - 0.08), sz = g.z - 0.1 * H.sign;
+      sd.x = sx; sd.y = sy; sd.z = sz; sd.s = 1; seedDirty = true;
       if (ctx.onHeld) ctx.onHeld(H.seat, H.held.length);
-      // the seed falls on a short arc while the hand already moves on
-      tween(reduced ? 60 : 150, function (k) {
-        if (s.token !== tok) return;
-        s.x = sx + (w.x - sx) * k; s.z = sz + (w.z - sz) * k;
-        s.y = sy + (w.y - sy) * k * k + 0.05 * Math.sin(Math.PI * k);
+      if (ctx.onEvent) ctx.onEvent(ev);
+      tween(reduced ? 60 : 170, function (k) {
+        if (sd.token !== tok) return;
+        sd.x = sx + (w.x - sx) * k; sd.z = sz + (w.z - sz) * k;
+        sd.y = sy + (w.y - sy) * k * k;
         seedDirty = true;
       }, null).then(function () {
+        if (ctx.onPit) ctx.onPit(owner, i, ev.n);
         if (IG.audio && !skipping) IG.audio.click(k0);
-        if (s.token !== tok || reduced) return;
-        tween(110, function (k) { if (s.token !== tok) return; s.y = w.y + 0.028 * Math.sin(Math.PI * k) * (1 - k); seedDirty = true; }, null);
+        if (sd.token !== tok || reduced) return;
+        tween(110, function (k) { if (sd.token !== tok) return; sd.y = w.y + 0.026 * Math.sin(Math.PI * k) * (1 - k); seedDirty = true; }, null);
       });
-      await wait(reduced ? 20 : 55);
+    }
+
+    /* a lap: the hand travels from where it is through each pit in turn, at a
+       steady speed with eased ends, dipping over each pit as its seed drops */
+    function sowLap(H, owner, drops, ctx) {
+      var g = H.group.position, tok = ++H.token, n = drops.length, k;
+      var pts = [{ x: g.x, z: g.z }], cum = [0];
+      for (k = 0; k < n; k++) {
+        var a = anchor(H, owner, drops[k].pit), b = pts[k];
+        pts.push(a); cum.push(cum[k] + Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.z - b.z) * (a.z - b.z)));
+      }
+      var L = cum[n], y0 = g.y, next = 0;
+      var ramp = Math.min(0.38, Math.max(0.12, 0.7 / n)), vmax = 1 / (1 - ramp);
+      var dur = L < 0.02 ? 120 : SOW_MS * L * vmax;
+      function profile(u) {                               // trapezoid: ease in, cruise, ease out
+        if (u < ramp) return vmax * u * u / (2 * ramp);
+        if (u > 1 - ramp) return 1 - vmax * (1 - u) * (1 - u) / (2 * ramp);
+        return vmax * (u - ramp / 2);
+      }
+      return tween(dur, function (u) {
+        if (H.token !== tok) return;
+        var s = u >= 1 ? L : profile(u) * L, j = 0;
+        while (j < n - 1 && s > cum[j + 1]) j++;
+        var seg = cum[j + 1] - cum[j], f = seg > 1e-6 ? Math.min(1, (s - cum[j]) / seg) : 1;
+        var p0 = pts[j], p1 = pts[j + 1];
+        var base = j === 0 ? y0 + (SOW_Y - y0) * f : SOW_Y;
+        g.set(p0.x + (p1.x - p0.x) * f, base + WAVE * Math.sin(Math.PI * f), p0.z + (p1.z - p0.z) * f);
+        var open = f > 0.8 ? (f - 0.8) / 0.2 : (j > 0 && f < 0.15 ? 1 - f / 0.15 : 0);
+        H.setCup(0.84 - 0.24 * open);
+        while (next < n && (u >= 1 || s >= cum[next + 1] - 1e-6)) release(H, owner, drops[next++], ctx);
+      }, null);
     }
 
     /**
      * Animates a slice of an engine event log for `seat`. Hand state carries
      * over between calls, so a move can pause for a decision and continue.
+     * A lift or a capture-sow and the drops that follow it are one lap.
      * ctx: { onPit(owner,i,n), onHeld(seat,n), onEvent(ev) }
      */
     async function playEvents(seat, events, ctx) {
@@ -689,37 +734,50 @@
       if (!flat) { solid(H); H.busy = true; }
       for (var n = 0; n < events.length; n++) {
         var ev = events[n];
-        if (ctx.onEvent) ctx.onEvent(ev);
-        if (flat) { flatEvent(H, seat, ev, ctx); if (!skipping) await new Promise(function (r) { setTimeout(r, ev.t === 'drop' ? 70 / speed : 120 / speed); }); continue; }
+        if (flat) { if (ctx.onEvent) ctx.onEvent(ev); flatEvent(H, seat, ev, ctx); if (!skipping) await new Promise(function (r) { setTimeout(r, ev.t === 'drop' ? 70 / speed : 120 / speed); }); continue; }
+        if (ev.t === 'lift' || ev.t === 'capsow') {
+          if (ctx.onEvent) ctx.onEvent(ev);
+          H.laps = (H.laps || 0) + 1;
+          accel = lapAccel(H.laps);
+          if (ev.t === 'lift') await scoop(H, seat, ev.pit, ctx);
+          else {
+            var o = anchor(H, seat, ev.from);
+            await handTo(H, o.x, SOW_Y + 0.06, o.z, reachMs(H, o.x, o.z), 0.16);
+            await wait(140);
+          }
+          var drops = [];
+          while (n + 1 < events.length && events[n + 1].t === 'drop') drops.push(events[++n]);
+          if (drops.length) await sowLap(H, seat, drops, ctx);
+          continue;
+        }
         switch (ev.t) {
-          case 'lift':
-            H.laps = (H.laps || 0) + 1;
-            accel = H.laps > 12 ? 4 : H.laps > 6 ? 2.6 : H.laps > 3 ? 1.6 : 1;
-            await scoop(H, seat, ev.pit, ctx);
+          case 'drop':                                     // a drop outside a lap: not produced by the engine, kept safe
+            await sowLap(H, seat, [ev], ctx);
             break;
-          case 'drop':
-            await drop(H, seat, ev.pit, ctx, ev.n);
-            break;
-          case 'relay':
-            await tween(80, function (k) { H.group.position.y = 0.44 - 0.1 * Math.sin(Math.PI * k * 0.5); });
+          case 'relay':                                    // the last seed landed on seeds: a beat, then reach in
+            if (ctx.onEvent) ctx.onEvent(ev);
+            await wait(170);
+            await tween(140, function (k) { H.group.position.y = SOW_Y - 0.06 * k; }, easeOut);
             break;
           case 'blocked': case 'pass':
-            await wait(260);
+            if (ctx.onEvent) ctx.onEvent(ev);
+            await wait(320);
             break;
           case 'capture':
-            await wait(340);
+            await wait(260);
+            if (ctx.onEvent) ctx.onEvent(ev);
             if (IG.audio && !skipping) IG.audio.knock();
+            await wait(320);
             await scoop(H, opp, ev.a, ctx);
             await scoop(H, opp, ev.b, ctx);
             break;
-          case 'capsow':
-            var a = anchor(H, seat, ev.from);
-            await handTo(H, a.x, HOVER_Y, a.z, travelMs(H, a.x, a.z, 120, 90), 0.1);
-            await wait(140);
-            break;
           case 'end':
+            if (ctx.onEvent) ctx.onEvent(ev);
+            await wait(200);
             endTurn(H);
             break;
+          default:
+            if (ctx.onEvent) ctx.onEvent(ev);
         }
       }
     }
@@ -734,13 +792,13 @@
     function endTurn(H) {
       H.laps = 0; accel = 1; H.busy = false;
       H.setCup(0.35);
-      handTo(H, H.group.position.x * 0.6, HOVER_Y, H.sign * REST_Z, 420, 0);
+      handTo(H, H.group.position.x * 0.6, HOVER_Y, H.sign * REST_Z, 520, 0);
     }
     function hover(seat, owner, i) {
       var H = hands[seat]; if (!H || flat) return Promise.resolve();
       solid(H);
       var a = anchor(H, owner, i);
-      return handTo(H, a.x, HOVER_Y + 0.08, a.z, travelMs(H, a.x, a.z, 160, 90), 0.08);
+      return handTo(H, a.x, HOVER_Y + 0.08, a.z, Math.max(200, reachMs(H, a.x, a.z)), 0.08);
     }
     function rest(seat) { var H = hands[seat]; if (H && !flat) endTurn(H); }
     /** translucent hand showing where the other player is hovering */
@@ -763,6 +821,11 @@
     return {
       init: init, project: project, projectPit: projectPit, pitRadiusU: pitRadiusU,
       setPits: setPits, counts: counts, playEvents: playEvents, hover: hover, rest: rest, ghost: ghost, handScreen: handScreen,
+      /* for tests and tools: where a hand is right now */
+      handState: function (seat) {
+        var H = hands[seat]; if (!H || flat) return null;
+        var g = H.group.position; return { x: g.x, y: g.y, z: g.z, cup: H.cup, held: H.held.length, busy: !!H.busy };
+      },
       wait: wait, invalidate: invalidate,
       onFrame: function (fn) { onFrameHooks.push(fn); },
       isFlat: function () { return flat; },

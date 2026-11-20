@@ -359,3 +359,75 @@ module.exports.full = async function (b, t) {
     await pg.close();
   }
 };
+
+/* ---------------------------------------------------------------------------
+   Hand motion, measured on a fake clock so the result does not depend on how
+   fast this machine renders. Plays a relay that ends in a capture at 1x and
+   samples the hand every frame. With MOTION_VIDEO=1 it also writes one
+   screenshot per 1/30 s to .preview/motion/ for tools/motion-video.sh.
+   --------------------------------------------------------------------------- */
+module.exports.motion = async function (b, t) {
+  const fs = require('fs'), path = require('path');
+  const video = process.env.MOTION_VIDEO === '1';
+  const dir = path.join(t.out, 'motion');
+  if (video) { fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true }); }
+  const pg = await t.open(b, { viewport: { width: 1000, height: 760 }, before: p => p.clock.install() });
+  // a position with a relay that ends in a capture, then cows sown from the relay pit
+  await pg.evaluate(() => {
+    const E = window.IgisoroEngine, my = new Array(16).fill(0), op = new Array(16).fill(0);
+    Object.assign(my, { 4: 2, 6: 4, 11: 1, 1: 3, 13: 2 }); Object.assign(op, { 12: 3, 3: 2, 9: 2, 6: 1, 0: 4, 14: 3 });
+    let rest = 64 - my.reduce((a, c) => a + c, 0) - op.reduce((a, c) => a + c, 0); op[15] += rest;
+    window.IG.ui.mode = 'game'; document.body.dataset.mode = 'game';
+    window.IG.game.start({ mode: 'local', rules: E.makeRules({ reverseSowing: false }), first: 0, ply: 2, pits: [my, op], bottom: 0,
+      seats: [{ kind: 'human', name: 'Bottom' }, { kind: 'human', name: 'Top' }], labels: ['Bottom', 'Top'] });
+    window.IG.view.setSpeed(1);
+    // a seed leaves the hand when the held count goes down
+    window.__drops = []; let held = 0;
+    const sh = window.IG.board.setHeld;
+    window.IG.board.setHeld = function (seat, n) { if (seat === 0 && n < held) window.__drops.push({ t: performance.now(), p: 0, n: 1 }); held = n; return sh.apply(this, arguments); };
+  });
+  await pg.clock.runFor(1500);
+  const clip = await pg.evaluate('(function(){var r=document.querySelector("#stage").getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),width:Math.round(r.width),height:Math.round(Math.min(r.height,720))}})()');
+  await pg.clock.pauseAt(Date.now() + 60000);
+  await pg.evaluate(() => { window.__t0 = performance.now(); window.__drops = []; window.__done = false; window.IG.game.perform({ start: 4, decisions: [] }).then(() => { window.__done = true; }); });
+  const samples = [];
+  let frame = 0;
+  for (let k = 0; k < 1200; k++) {
+    await pg.clock.runFor(video ? 33 : 16);
+    const s = await pg.evaluate('(function(){var h=window.IG.view.handState(0);return {t:performance.now()-window.__t0,x:h.x,y:h.y,z:h.z,held:h.held,busy:h.busy,done:window.__done}})()');
+    samples.push(s);
+    if (video) await pg.screenshot({ path: path.join(dir, String(frame++).padStart(4, '0') + '.png'), clip, animations: 'allow', caret: 'initial' });
+    if (s.done && !s.busy && k > 10 && Math.abs(s.z - 4.9) < 0.05) break;
+  }
+  // the moments seeds leave the hand
+  const drops = await pg.evaluate('window.__drops.map(function(d){return {t:d.t-window.__t0,p:d.p,n:d.n}})');
+  // per-frame movement in the board plane
+  let maxStep = 0, stops = 0;
+  const v = [];
+  for (let k = 1; k < samples.length; k++) {
+    const a = samples[k - 1], c = samples[k], d = Math.hypot(c.x - a.x, c.z - a.z), dt = c.t - a.t;
+    maxStep = Math.max(maxStep, d); v.push({ t: c.t, speed: d / dt * 1000 });
+  }
+  // a stop while sowing = a frame inside a lap where the hand does not move between two drops into consecutive pits
+  const laps = [];
+  let cur = [drops[0]];
+  for (let k = 1; k < drops.length; k++) { if (drops[k].t - drops[k - 1].t > 520) { laps.push(cur); cur = []; } cur.push(drops[k]); }
+  laps.push(cur);
+  const gaps = [];
+  for (const lap of laps) for (let k = 1; k < lap.length; k++) {
+    gaps.push(lap[k].t - lap[k - 1].t);
+    stops += v.filter(x => x.t > lap[k - 1].t + 20 && x.t < lap[k].t - 20 && x.speed < 0.05).length;
+  }
+  const mean = gaps.reduce((a, c) => a + c, 0) / gaps.length, sd = Math.sqrt(gaps.reduce((a, c) => a + (c - mean) * (c - mean), 0) / gaps.length);
+  const total = samples[samples.length - 1].t;
+  console.log('  move: relay, capture, cows sown from the relay pit, relay, end');
+  console.log('  seeds released: ' + drops.length + ' in ' + laps.length + ' laps (' + laps.map(l => l.length).join(', ') + ')');
+  console.log('  seed-to-seed within a lap at 1x: mean ' + Math.round(mean) + ' ms, spread ' + Math.round(sd) + ' ms, min ' + Math.round(Math.min(...gaps)) + ', max ' + Math.round(Math.max(...gaps)));
+  console.log('  frames where the hand stood still mid-lap: ' + stops);
+  console.log('  largest movement in one frame: ' + maxStep.toFixed(3) + ' board units (a pit is 1 unit)');
+  console.log('  whole move, reach to rest: ' + (total / 1000).toFixed(1) + ' s over ' + samples.length + ' frames');
+  console.log('  board agrees with the engine: ' + await pg.evaluate('window.IG.view.counts().map(function(a){return a.join()}).join("|") === window.IG.game.state.pits.map(function(a){return a.join()}).join("|")'));
+  if (video) console.log('  wrote ' + frame + ' frames to ' + dir);
+  console.log(pg.errors.length ? '  MOTION ERRORS ' + JSON.stringify(pg.errors) : '  MOTION OK');
+  await pg.close();
+};
