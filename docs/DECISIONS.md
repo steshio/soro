@@ -30,6 +30,7 @@ A record of the calls made in the first build (version 0.1.0, 15 November 2026),
 - At most 24 decision sequences are enumerated per start pit (only matters in optional-capture mode with long chains).
 - The AI evaluates seed difference, mobility, exposed seeds and threats held, and searches complete turns. Beginner plays a casual move about 38% of the time and prefers ones that miss a capture.
 - Captures swing hard under these rules: random games average about 40 plies, and one move can take 20 cows or more. If real play feels slower than this, the capture-sow rule (question 2 in RULES.md) is the first place to look.
+- **Where cows are sown** changed on 20 November 2026, from the founder's play: from the pit last lifted, the normal way, as if just picked up there. Daily puzzles generated after this date differ from what the old rule would have produced; puzzles already solved keep their recorded tries. A table opened online on the old version will not stay in sync with the new one.
 
 ## Design
 

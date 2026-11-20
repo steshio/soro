@@ -20,7 +20,9 @@
 
 ## Capture
 
-- Take all seeds from both facing pits. Sow them on your own side starting from the **origin pit** of the turn. With `captureSowStart: "afterOrigin"` (default) the first seed goes into the pit after the origin; with `"origin"` it goes into the origin pit itself.
+- Take all seeds from both facing pits. Sow them on your own side as if you had just picked them up from **the pit you last lifted**: the start pit, or the last pit a relay lifted. Confirmed by the founder on 20 November 2026; the first builds used the start pit of the turn. With `captureSowStart: "afterOrigin"` (default) the first seed goes into the pit after that one; with `"origin"` it goes into that pit itself.
+- Example: 2 seeds from pit A land in pit B, which held 4. The 5 seeds of B relay and the last one captures. The cows are sown from B, not from A.
+- After the capture-sow, the pit last lifted does not change unless another relay lifts a pit.
 - Then step 3 applies again to where the last captured seed fell, so captures chain.
 - `captureMode: "forced"` (default) or `"optional"`. In optional mode a capture can be declined (ndahise) and the move relays instead.
 
@@ -35,7 +37,7 @@ Sowing has one direction: anticlockwise. Four pits per player are the exception.
 
 - When a lap is about to be lifted from one of these pits (the start of a move, or a relay that ended there), the player may sow that lap clockwise, **only if that lap ends in a direct capture**. The engine offers the choice only when that is true, and names it (`pending.name` is `guteba` or `kugarama`).
 - The normal anticlockwise direction has no Kinyarwanda name in this build.
-- Captured seeds are sown in the direction of the lap that made the capture. If the capturing lap was anticlockwise and the origin is one of the four pits, a clockwise capture-sow is offered when it would capture directly.
+- Captured seeds go the normal way, anticlockwise, whatever direction made the capture. The one exception is the same as for a lift: if the pit last lifted is a Nteba or Ngarama pit and sowing the cows clockwise from it would capture directly, the player may choose clockwise. So after guteba from a Nteba pit, the cows go the normal way from that Nteba pit unless guteba with the cows would capture again.
 - A clockwise lap always captures, so in optional mode its capture cannot be declined.
 - Relays after a clockwise lap go back to anticlockwise.
 - Off in the Learn rules preset, on in Traditional and at the tables.
@@ -63,7 +65,7 @@ Every candidate move is simulated in full before it is offered. A move is refuse
 | `minSeedsToSow` | 2 | seeds needed to play a pit |
 | `seedsPerInnerPit` | 4 | standard setup: inner rows filled, outer rows empty |
 | `captureMode` | `forced` | or `optional` |
-| `captureSowStart` | `afterOrigin` | or `origin` |
+| `captureSowStart` | `afterOrigin` | or `origin`; either way counted from the pit last lifted |
 | `reverseSowing` | `true` | guteba and kugarama; `false` in the Learn preset |
 | `ntebaPits` | `[0, 14]` | clockwise from these is guteba |
 | `ngaramaPits` | `[7, 9]` | clockwise from these is kugarama |
@@ -81,11 +83,11 @@ A move is `{ start, decisions }`. `decisions` holds one entry per real choice, i
 ## To confirm with elders and the Academy
 
 1. **What "leads to a capture" means for guteba and kugarama.** Here the clockwise lap itself must end in a capture. The alternative is that the move may relay first and capture later. This decides whether kugarama is rare (big pits only) or common, and if relays are allowed, which way they go.
-2. **Where captured seeds start.** Into the pit after the origin, or into the origin pit itself?
+2. **Where captured seeds start.** Settled: from the pit last lifted. Still open: does the first cow go into the pit after it (this build) or into that pit itself?
 3. **Opening.** Are the first two moves barred from capturing? Tradition plays them simultaneously; this build alternates them.
 4. **Endless moves.** Tradition annuls the game. This build refuses to offer the move. Is that acceptable for casual play?
 5. **Direction after a clockwise capture.** Here every relay lap goes back to anticlockwise unless it starts from one of the four pits and captures directly.
-6. **Direction of the capture-sow.** Here it follows the capturing lap. Confirm, and confirm whether a clockwise choice exists for it when the origin is a Nteba or Ngarama pit.
+6. **Direction of the capture-sow.** Settled: the normal way, unless the pit last lifted is a Nteba or Ngarama pit and clockwise would capture again. Still open: after a chain of captures with no new relay, cows keep starting from the same pit; confirm.
 7. **Declining a clockwise capture** in optional mode: not allowed here.
 8. **Forced or optional capture** as the default in Rwanda today.
 9. **Stalemate by endless options**: annulled here.
