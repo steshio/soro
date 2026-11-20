@@ -495,7 +495,7 @@
     var cfg = G.cfg; if (!cfg) return '';
     var h = confirmBox() + head(esc(cfg.eyebrow || ''), esc(cfg.title || 'Game'), '');
     if (UI.score[0] + UI.score[1] > 0) h += '<p class="score"><span>Points (igitego)</span><b>' + UI.score[0] + '</b><i>:</i><b>' + UI.score[1] + '</b></p>';
-    if (!G.over && G.moves.length < 2 && cfg.rules.openingNoCaptureMoves) h += '<p class="muted">Opening: the first move of each player cannot capture.</p>';
+    if (!G.over && G.state.ply < cfg.rules.openingNoCaptureMoves) h += '<p class="muted">Opening: the first move of each player cannot capture.</p>';
     h += nudgeBlock();
     if (G.over && G.result) {
       var w = G.result.winner, ai = cfg.mode === 'ai';
@@ -676,7 +676,8 @@
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
       if (UI.confirm) { UI.confirm = null; UI.render(); }
-      else if (UI.full && U.$('#prompt').hidden) UI.setFull(false);
+      else if (G.asking()) G.cancelSelect();
+      else if (UI.full) UI.setFull(false);
     });
     // Escape or the browser's own control ended real full screen: follow it
     ['fullscreenchange', 'webkitfullscreenchange'].forEach(function (ev) {
