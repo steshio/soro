@@ -15,6 +15,7 @@ It ships as **one self-contained HTML page** (`dist/igisoro.html`). There is no 
 | Play the computer: Beginner, Intermediate, Strong, Master, in a Web Worker | done |
 | Pass and play on one device | done |
 | Full-screen toggle while playing | done |
+| Nteba and Ngarama: a one-time explainer, then two arrows to choose the direction | done |
 | Online with a friend: table codes, live moves, resync, resign, rematch | done, see "Not yet tested" |
 | Learn path: levels 0 to 6 on the real board, including guteba and kugarama | done |
 | Puzzles: generated, verified, daily puzzle, share card | done |
@@ -42,7 +43,9 @@ npm run build
 npm run preview -- shots
 ```
 
-`npm test` runs the engine suite (68 checks, 2,100 random self-play games) and the content suite (every Learn position and 40 daily puzzles verified by the engine). `npm run preview -- <scenario>` drives the built page in headless Chromium and writes screenshots to `.preview/`. Scenarios: `shots`, `play`, `learn`, `more`, `flat`, `online`, `full`.
+`npm test` runs the engine suite (87 checks, 2,100 random self-play games) and the content suite (every Learn position and 40 daily puzzles verified by the engine). `npm run preview -- <scenario>` drives the built page in headless Chromium and writes screenshots to `.preview/`. Scenarios: `shots`, `play`, `learn`, `more`, `flat`, `online`, `full`, `chooser`, `motion`.
+
+`tools/motion-video.sh` renders `.preview/hand-motion.mp4`: one move at true 1x speed, captured on a simulated clock so the video is right however slowly the machine renders. Use it to judge any change to the hand.
 
 ## Publish
 

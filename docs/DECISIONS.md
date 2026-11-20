@@ -41,6 +41,20 @@ A record of the calls made in the first build (version 0.1.0, 15 November 2026),
 - **Full screen** is offered in games against the computer, pass and play and online, not in lessons or puzzles, whose instructions live in the side panel. It uses the browser's full-screen mode where allowed and an in-page overlay otherwise (iPhone browsers, some app views). While full, the coach's note, leave confirmations and the result appear inside the stage.
 - Type: Young Serif for headings, Instrument Sans for the interface. One Imigongo zigzag rule under the header, triangles as step markers and bullets, geometric badge glyphs.
 
+## Hand motion (rebuilt 20 November 2026)
+
+- At 1x the hand sows one pit about every 290 ms, steadily, easing in and out at the ends of each lap. It never stops between seeds.
+- Beats: about 0.3 s after a relay lands before the hand reaches in; about 0.6 s at a capture before it reaches across; 0.2 s at the end of a turn before it withdraws.
+- Long chains speed up from the fourth lap, to 1.25x, 1.6x and at most 2x of the chosen speed. The first build went to 4x, which read as the hand suddenly rushing.
+- The hand is placed so its curled fingertips sit over the pit it is sowing into. The first build placed its knuckles there, so the fingertips stopped at the near edge of each pit.
+- A whole move with a relay, a capture and a second relay takes about 11 seconds at 1x. Players who know the game will want 2x; online games already default to it.
+
+## Nteba and Ngarama choice (20 November 2026)
+
+- The direction is chosen before the move is animated, from two arrows on the board, instead of from a prompt halfway through.
+- The explainer appears once per kind (guteba, kugarama), only when the chance is real, never in lessons, and is marked as seen when Learn level 5 is finished.
+- At tables, where previews are off, the arrows show direction only, with no path, outcome or capture rings. The fact that the choice is offered still tells a player the clockwise lap captures, because the rule allows it only then.
+
 ## Where the board does not match the reference photo
 
 - The photo's pits are slightly taller than wide; here they are true circles on a 1 : 1.08 grid.
@@ -52,7 +66,7 @@ A record of the calls made in the first build (version 0.1.0, 15 November 2026),
 ## Not yet tested
 
 - **Two real people online.** The netcode was exercised between two browser pages against an in-memory stand-in for the claude.ai runtime (`npm run preview -- online`). The real `db`, `room` and `user` services, access levels for a Contributor, and reconnect behaviour have not been exercised by a second person.
-- **Real phones.** Layout and tap targets (43 px pits at 390 px wide) were checked in an emulated viewport. Frame rate on a mid-range phone has not been measured.
+- **Real phones.** Layout and tap targets (43 px pits at 390 px wide) were checked in an emulated viewport. Frame rate on a mid-range phone has not been measured, and the hand's pace has been judged from a rendered video, not on a phone in someone's hand.
 - **Web fonts and the Three.js CDN** load only on the published page; the sandbox blocked both, so local screenshots show fallback fonts.
 - **Screen readers.** Labels, the live region and keyboard play are in place and were driven by script, not by a screen reader.
 - **Sound** was not listened to.
