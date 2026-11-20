@@ -68,13 +68,13 @@
     return { v: 1, xp: 0, cows: 50, rating: 1200, rated: 0, streak: { n: 0, day: '' }, best: 0, badges: {}, lessons: {},
       stats: { games: 0, wins: 0, captures: 0, puzzles: 0 }, won: 0, tables: {}, missions: { day: '', items: [] },
       login: { day: '', idx: 0 }, topup: '', daily: {}, look: { wood: 'walnut', seed: 'black', carve: false, bracelet: '' },
-      ratedKeys: [], updatedAt: 0 };
+      ratedKeys: [], seen: {}, updatedAt: 0 };
   }
   function adopt(raw) {       // stored data is untrusted: copy known fields with type checks
     var d = fresh(); if (!raw || typeof raw !== 'object') return d;
     ['xp', 'cows', 'rating', 'rated', 'best', 'won', 'updatedAt'].forEach(function (k) { if (typeof raw[k] === 'number' && isFinite(raw[k])) d[k] = Math.max(0, Math.round(raw[k])); });
     if (typeof raw.topup === 'string') d.topup = raw.topup.slice(0, 10);
-    ['badges', 'lessons', 'tables', 'daily', 'stats'].forEach(function (k) {
+    ['badges', 'lessons', 'tables', 'daily', 'stats', 'seen'].forEach(function (k) {
       if (raw[k] && typeof raw[k] === 'object') for (var x in raw[k]) if (/^[\w:.-]{1,40}$/.test(x) && (typeof raw[k][x] === 'number' || typeof raw[k][x] === 'boolean')) d[k][x] = raw[k][x];
     });
     if (raw.streak && typeof raw.streak.n === 'number') d.streak = { n: Math.max(0, raw.streak.n | 0), day: String(raw.streak.day || '').slice(0, 10) };
@@ -273,6 +273,10 @@
       });
     }, function () { return null; });
   };
+
+  /* ---- one-time explainers (guteba, kugarama) -------------------------------- */
+  P.hasSeen = function (k) { return !!P.data.seen[k]; };
+  P.markSeen = function (k) { if (P.data.seen[k]) return; P.data.seen[k] = true; save(); };
 
   /* ---- cosmetics ------------------------------------------------------------ */
   P.owns = function (c) { return P.level().n >= c.level; };
