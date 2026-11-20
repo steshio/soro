@@ -118,8 +118,8 @@ a { color: inherit; }
 .pit.sel, .pit.sel:hover { box-shadow: inset 0 0 0 3px var(--fx); }
 .pit.dim::before { content: ""; position: absolute; inset: 7%; border-radius: 50%; background: rgba(16, 9, 6, 0.4); }
 .pit.mark { box-shadow: inset 0 0 0 3px var(--fx); }
-.pit.mark-warn { box-shadow: inset 0 0 0 3.5px var(--fx-cap); }
-.pit.mark-alt { box-shadow: inset 0 0 0 3.5px var(--fx-alt); }
+.pit.mark-warn, .pit.sel.mark-warn { box-shadow: inset 0 0 0 3.5px var(--fx-cap); }
+.pit.mark-alt, .pit.sel.mark-alt { box-shadow: inset 0 0 0 3.5px var(--fx-alt); }
 .pit.glow { box-shadow: inset 0 0 0 3px var(--fx), 0 0 16px 5px rgba(244, 210, 126, 0.6); animation: glow 1.3s ease-in-out infinite; }
 @keyframes glow { 50% { box-shadow: inset 0 0 0 3px var(--fx), 0 0 4px 1px rgba(244, 210, 126, 0.35); } }
 .pit:focus-visible { outline: 3px solid #fff; outline-offset: 1px; border-radius: 50%; box-shadow: 0 0 0 6px rgba(0, 0, 0, 0.55); }
@@ -137,6 +137,47 @@ body.hide-counts .handchip, .board.no-counts .handchip { display: none; }
 .prompt-q { font-weight: 700; font-size: 13px; padding: 0 2px; }
 .prompt .btn { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 7px 12px; }
 .prompt .btn span { font-weight: 400; font-size: 12px; color: var(--ink-3); }
+
+/* the one-time explainer for Nteba and Ngarama pits */
+.prompt.explain { width: min(300px, 72%); max-width: none; gap: 7px; padding: 14px; font-size: 13.5px; line-height: 1.45; }
+.prompt.explain p { margin: 0; }
+.prompt.explain .btn { align-self: flex-start; flex-direction: row; padding: 6px 16px; margin-top: 4px; }
+.explain-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); }
+.explain-title { font: 400 19px/1.2 var(--font-display); }
+
+/* two arrows on the board, two buttons in the board's lower margin */
+.fx-path.fx-normal { stroke: var(--fx); }
+.fx-path.fx-guteba { stroke: var(--fx-cap); stroke-dasharray: 1 9; }
+.fx-path.fx-kugarama { stroke: var(--fx-alt); stroke-dasharray: 1 9; }
+.fx-dot.fx-normal, .fx-head.fx-normal { fill: var(--fx); }
+.fx-dot.fx-guteba, .fx-head.fx-guteba { fill: var(--fx-cap); }
+.fx-dot.fx-kugarama, .fx-head.fx-kugarama { fill: var(--fx-alt); }
+.fx-head { stroke: rgba(20, 10, 6, 0.55); stroke-width: 1.5; }
+.chooser { position: absolute; z-index: 6; left: 50%; bottom: 2.2%; transform: translateX(-50%); display: flex; gap: 8px; width: max-content; max-width: 96%; }
+.chooser .choice { min-height: 40px; padding: 6px 12px 6px 10px; gap: 8px; text-align: left; background: var(--surface); border-color: transparent; box-shadow: 0 6px 22px rgba(0, 0, 0, 0.3); }
+.chooser .choice:hover { border-color: var(--ink); }
+.chooser .choice span { display: flex; flex-direction: column; line-height: 1.2; }
+.chooser .choice b { font-size: 13.5px; }
+.chooser .choice small { font-weight: 500; font-size: 11.5px; color: var(--ink-3); }
+.dir-ico { width: 22px; height: 22px; flex: none; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.choice-normal .dir-ico { stroke: #b88a1c; }
+.choice-guteba .dir-ico { stroke: #d2553b; }
+.choice-kugarama .dir-ico { stroke: #3f8f2a; }
+:root[data-theme="dark"] .choice-normal .dir-ico { stroke: var(--fx); }
+:root[data-theme="dark"] .choice-guteba .dir-ico { stroke: var(--fx-cap); }
+:root[data-theme="dark"] .choice-kugarama .dir-ico { stroke: var(--fx-alt); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .choice-normal .dir-ico { stroke: var(--fx); }
+  :root:not([data-theme="light"]) .choice-guteba .dir-ico { stroke: var(--fx-cap); }
+  :root:not([data-theme="light"]) .choice-kugarama .dir-ico { stroke: var(--fx-alt); }
+}
+@media (max-width: 480px) {
+  .chooser { gap: 6px; bottom: 1.5%; }
+  .chooser .choice { min-height: 40px; padding: 4px 9px 4px 7px; gap: 6px; }
+  .chooser .choice b { font-size: 12.5px; }
+  .chooser .choice small { font-size: 10.5px; }
+  .dir-ico { width: 18px; height: 18px; }
+}
 
 /* no WebGL: a flat board drawn in CSS, counts always on */
 .flat .pits::before { content: ""; position: absolute; left: 2.24%; right: 2.24%; top: 16.95%; bottom: 16.95%; border-radius: 1.6cqw; background: var(--wood); }
