@@ -77,6 +77,7 @@
         L.gained = IG.progress.data.lessons[L.lesson.id] ? 5 : 40;
         IG.progress.event('lesson', { id: L.lesson.id });
         IG.audio.good();
+        if (L.lesson.id === 'L5') { IG.progress.markSeen('guteba'); IG.progress.markSeen('kugarama'); }   // the lesson was the explanation
         if (L.lesson.id === 'L5' && IG.settings.get('rulesMode') === 'learn') {
           IG.settings.set('rulesMode', 'traditional');
           IG.toast('<b>Rules mode: Traditional</b><span>Guteba and kugarama are now on in your games. Change it in Settings.</span>');
