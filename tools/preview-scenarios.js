@@ -387,8 +387,10 @@ module.exports.motion = async function (b, t) {
   // a position with a relay that ends in a capture, then cows sown from the relay pit
   await pg.evaluate(() => {
     const E = window.IgisoroEngine, my = new Array(16).fill(0), op = new Array(16).fill(0);
-    Object.assign(my, { 4: 2, 6: 4, 11: 1, 1: 3, 13: 2 }); Object.assign(op, { 12: 3, 3: 2, 9: 2, 6: 1, 0: 4, 14: 3 });
-    let rest = 64 - my.reduce((a, c) => a + c, 0) - op.reduce((a, c) => a + c, 0); op[15] += rest;
+    // a believable middle game: 64 seeds, the opponent's spread over most of their pits
+    Object.assign(my, { 4: 2, 6: 4, 11: 1, 1: 3, 13: 2, 15: 2 });
+    Object.assign(op, { 12: 3, 3: 2, 9: 3, 6: 1, 0: 4, 14: 3, 8: 4, 10: 5, 11: 4, 13: 4, 15: 4, 1: 3, 2: 2, 5: 3, 7: 2, 4: 3 });
+    let rest = 64 - my.reduce((a, c) => a + c, 0) - op.reduce((a, c) => a + c, 0); if (rest !== 0) throw new Error('position holds ' + (64 - rest) + ' seeds');
     window.IG.ui.mode = 'game'; document.body.dataset.mode = 'game';
     window.IG.game.start({ mode: 'local', rules: E.makeRules({ reverseSowing: false }), first: 0, ply: 2, pits: [my, op], bottom: 0,
       seats: [{ kind: 'human', name: 'Bottom' }, { kind: 'human', name: 'Top' }], labels: ['Bottom', 'Top'] });

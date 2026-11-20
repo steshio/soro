@@ -404,7 +404,7 @@
     var speed = 1, accel = 1, skipping = false, reduced = false;
     var seedDirty = false;
     var onFrameHooks = [];
-    var REST_Z = 4.9, HOVER_Y = 0.5;
+    var REST_Z = 4.9, HOVER_Y = 0.62;
 
     function init(wrapEl, canvasEl) {
       wrap = wrapEl; canvas = canvasEl;
@@ -617,12 +617,17 @@
        between seeds. The beats between laps (relay, capture, end of turn) are
        short pauses so each reads on its own. Long relay chains speed up
        gently from the fourth lap, never past 2x on top of the chosen speed. */
-    var SOW_MS = 290, SOW_Y = 0.4, WAVE = 0.06, SCOOP_Y = 0.24;
+    var SOW_MS = 290, SOW_Y = 0.5, WAVE = 0.06, SCOOP_Y = 0.3;
+    /* The hand's origin is above its knuckles. Curled, its fingertips sit about
+       0.4 behind the origin (towards the player) and 0.43 below it, so the
+       origin goes 0.38 beyond a pit's centre to put the fingertips over it,
+       and at SOW_Y the fingertips clear the wood between pits. */
+    var TIP_BACK = 0.38, TIP_DOWN = 0.43;
     function lapAccel(lap) { return lap <= 3 ? 1 : lap <= 6 ? 1.25 : lap <= 10 ? 1.6 : 2; }
 
     function anchor(H, owner, i) {
       var pp = pitPos(owner, i);
-      return { x: pp.x + 0.02 * H.sign, z: pp.z + 0.16 * H.sign };
+      return { x: pp.x + 0.02 * H.sign, z: pp.z - TIP_BACK * H.sign };
     }
     function easeInOutCubic(k) { return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; }
     function easeInOutSine(k) { return 0.5 - 0.5 * Math.cos(Math.PI * k); }
@@ -652,12 +657,12 @@
       if (IG.audio && !skipping) IG.audio.scoop(ids.length);
       await tween(230, function (k) {
         g.y = y0 + (SCOOP_Y - y0) * k; H.setCup(c0 + (1 - c0) * k);
-        var px = g.x, pz = g.z + 0.26 * H.sign;            // under the palm
+        var px = g.x, pz = g.z + (TIP_BACK + 0.08) * H.sign;   // into the curled fingers
         for (var n = 0; n < from.length; n++) {
           var f = from[n], sd = seeds[f.id];
           if (sd.token !== f.tok) continue;
           var q = Math.max(0, (k - 0.25) / 0.75);          // seeds move once the fingers reach them
-          sd.x = f.x + (px - f.x) * q; sd.z = f.z + (pz - f.z) * q; sd.y = f.y + (0.18 - f.y) * q; sd.s = 1 - q * q;
+          sd.x = f.x + (px - f.x) * q; sd.z = f.z + (pz - f.z) * q; sd.y = f.y + (0.06 - f.y) * q; sd.s = 1 - q * q;
         }
         seedDirty = true;
       }, easeInOutCubic);
@@ -673,7 +678,7 @@
       var i = ev.pit, k0 = pitSeeds[owner][i].length, w = slotWorld(owner, i, k0);
       pitSeeds[owner][i].push(id);
       var sd = seeds[id], tok = ++sd.token, g = H.group.position;
-      var sx = g.x, sy = Math.min(0.3, g.y - 0.08), sz = g.z - 0.1 * H.sign;
+      var sx = g.x, sy = Math.max(0.04, g.y - TIP_DOWN + 0.06), sz = g.z + TIP_BACK * H.sign;   // from the fingertips
       sd.x = sx; sd.y = sy; sd.z = sz; sd.s = 1; seedDirty = true;
       if (ctx.onHeld) ctx.onHeld(H.seat, H.held.length);
       if (ctx.onEvent) ctx.onEvent(ev);
