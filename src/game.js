@@ -34,6 +34,9 @@
       var t = e.target.closest('.pit'); if (t) IG.game.hoverPit(+t.dataset.p, +t.dataset.i);
     });
     B.pits.addEventListener('pointerleave', function () { IG.game.hoverPit(null, null); });
+    U.$('#chooser').addEventListener('click', function (e) {
+      var t = e.target.closest('[data-dir]'); if (t) IG.game.chooseDirection(t.dataset.dir);
+    });
     B.pits.addEventListener('focusin', function (e) {
       var t = e.target.closest('.pit'); if (!t) return;
       U.$$('.pit', B.pits).forEach(function (x) { x.tabIndex = -1; }); t.tabIndex = 0;
@@ -152,40 +155,123 @@
     setTimeout(function () { if (B.fx.innerHTML === out) B.fx.innerHTML = ''; }, 1500);
   };
 
-  /* a choice in the middle of a move: the hand hovers, the options sit beside it */
+  /* a capture decision in optional mode: the hand hovers, the options sit beside it */
   B.ask = function (pending, seat, options) {
     return new Promise(function (resolve) {
-      var q = V.projectPit(seat, pending.pit), html = '';
-      // clockwise from a Nteba pit is guteba, from an Ngarama pit kugarama; the normal direction has no special name
-      var rev = pending.name === 'kugarama' ? 'Kugarama' : 'Guteba';
-      var TEXT = {
-        ccw: ['Normal way', 'anticlockwise'], cw: [rev, 'clockwise, to capture'],
-        take: ['Kurasa', 'capture the cows'], pass: ['Ndahise', 'I pass, and relay']
-      };
-      html += '<p class="prompt-q">' + (pending.type === 'capture' ? 'Capture here?' : pending.kind === 'capsow' ? 'Sow the cows which way?' : 'Which way?') + '</p>';
+      var TEXT = { take: ['Kurasa', 'capture the cows'], pass: ['Ndahise', 'I pass, and relay'] }, html = '';
+      html += '<p class="prompt-q">Capture here?</p>';
       options.forEach(function (o) {
         html += '<button type="button" class="btn btn-small" data-choice="' + o + '"><b>' + TEXT[o][0] + '</b><span>' + TEXT[o][1] + '</span></button>';
       });
-      B.prompt.innerHTML = html;
-      B.prompt.hidden = false;
-      var below = q.v < 0.5;
-      B.prompt.style.left = U.clamp(q.u * 100, 22, 78) + '%';
-      B.prompt.style.top = (q.v * 100) + '%';
-      B.prompt.classList.toggle('below', below);
-      var first = U.$('button', B.prompt); if (first && document.activeElement && document.activeElement.closest && document.activeElement.closest('#pits')) first.focus();
+      placePrompt(seat, pending.pit, html, '');
       B.prompt.onclick = function (e) {
         var t = e.target.closest('[data-choice]'); if (!t) return;
-        B.prompt.hidden = true; B.prompt.onclick = null;
+        B.prompt.hidden = true; B.prompt.onclick = null; B.cancelAsk = null;
         resolve(t.dataset.choice);
       };
       B.cancelAsk = function () { B.prompt.hidden = true; B.prompt.onclick = null; B.cancelAsk = null; resolve(null); };
     });
   };
+  function placePrompt(seat, pit, html, cls) {
+    var q = V.projectPit(seat, pit);
+    B.prompt.className = 'prompt' + (cls ? ' ' + cls : '');
+    B.prompt.innerHTML = html;
+    B.prompt.hidden = false;
+    B.prompt.style.left = U.clamp(q.u * 100, 24, 76) + '%';
+    B.prompt.style.top = (q.v * 100) + '%';
+    B.prompt.classList.toggle('below', q.v < 0.5);
+    var first = U.$('button', B.prompt);
+    if (first && document.activeElement && document.activeElement.closest && document.activeElement.closest('#pits')) first.focus();
+  }
+
+  /* ---- Nteba and Ngarama: a one-time explainer, then a choice of two arrows ---- */
+  var ICON_CCW = '<svg class="dir-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
+  var ICON_CW = '<svg class="dir-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>';
+  var KIND = {
+    guteba: { pit: 'Nteba', article: 'a', side: 'left', move: 'guteba', Move: 'Guteba', mark: 'warn' },
+    kugarama: { pit: 'Ngarama', article: 'an', side: 'right', move: 'kugarama', Move: 'Kugarama', mark: 'alt' }
+  };
+  B.kind = function (name) { return KIND[name]; };
+
+  /* shown once per kind, the first time the move is really available to the player */
+  B.explain = function (ch) {
+    var K = KIND[ch.name], R = G.state.rules;
+    var pits = (ch.name === 'guteba' ? R.ntebaPits : R.ngaramaPits).map(function (i) { return [ch.seat, i, K.mark]; });
+    var title = ch.phase === 'relay' ? 'Your move has reached ' + K.article + ' ' + K.pit + ' pit' :
+      ch.phase === 'capsow' ? 'Your cows start from ' + K.article + ' ' + K.pit + ' pit' : 'This is ' + K.article + ' ' + K.pit + ' pit';
+    var html = '<p class="explain-kicker">Special pit</p><p class="explain-title">' + title + '</p>' +
+      '<p>You have two ' + K.pit + ' pits: your outer ' + K.side + ' corner pit and your second inner pit from the ' + K.side + '. They are ringed on the board.</p>' +
+      '<p>From here you may sow clockwise. That is called ' + K.move + '.</p>' +
+      '<p>You may do it only when that lap captures. Right now it does.</p>' +
+      '<button type="button" class="btn btn-small btn-primary" data-got="1">Got it</button>';
+    var keep = B.marks;
+    B.clearFx(); B.setMarks(pits);
+    placePrompt(ch.seat, ch.pit, html, 'explain');
+    return new Promise(function (resolve) {
+      function close(v) { B.prompt.hidden = true; B.prompt.onclick = null; B.cancelExplain = null; B.marks = keep; B.refresh(); resolve(v); }
+      B.prompt.onclick = function (e) { if (e.target.closest('[data-got]')) close(true); };
+      B.cancelExplain = function () { close(false); };
+    });
+  };
+
+  /* the paths of both laps, each ending in an arrowhead, with buttons under the board */
+  function lapPath(seat, from, pits, cls, head) {
+    var pts = [B.xy(seat, from)].concat(pits.map(function (i) { return B.xy(seat, i); })), d = '', k, out = '';
+    for (k = 0; k < pts.length; k++) d += (k ? ' L' : 'M') + pts[k].x.toFixed(1) + ' ' + pts[k].y.toFixed(1);
+    out += svg('path', { d: d, 'class': 'fx-path ' + cls });
+    for (k = 1; k < pts.length - 1; k++) out += svg('circle', { cx: pts[k].x.toFixed(1), cy: pts[k].y.toFixed(1), r: 5, 'class': 'fx-dot ' + cls });
+    if (pts.length > 1) {
+      var a = pts[pts.length - 2], b = pts[pts.length - 1], dx = b.x - a.x, dy = b.y - a.y, L = Math.sqrt(dx * dx + dy * dy) || 1;
+      var ux = dx / L, uy = dy / L, tipx = b.x - ux * head, tipy = b.y - uy * head, w = 11, len = 20;
+      var p1 = (tipx - ux * len + uy * w).toFixed(1) + ',' + (tipy - uy * len - ux * w).toFixed(1);
+      var p2 = (tipx - ux * len - uy * w).toFixed(1) + ',' + (tipy - uy * len + ux * w).toFixed(1);
+      out += '<polygon class="fx-head ' + cls + '" points="' + tipx.toFixed(1) + ',' + tipy.toFixed(1) + ' ' + p1 + ' ' + p2 + '"/>';
+    }
+    return out;
+  }
+  B.showChoice = function (ch, branches, full) {
+    var r = IG.DIM.pitR / IG.DIM.viewW * VW, K = KIND[ch.name], out = '', s0 = B.xy(ch.seat, ch.pit);
+    branches.forEach(function (b) {
+      var cls = b.dir === 'cw' ? 'fx-' + ch.name : 'fx-normal';
+      out += lapPath(ch.seat, ch.pit, full ? b.pits : b.pits.slice(0, 1), cls, full ? r * 0.42 : r * 0.1);
+      if (full && b.capA !== undefined) [b.capA, b.capB].forEach(function (i) {
+        var q = B.xy(1 - ch.seat, i);
+        out += svg('circle', { cx: q.x.toFixed(1), cy: q.y.toFixed(1), r: (r + 2).toFixed(1), 'class': 'fx-cap' });
+      });
+    });
+    out += svg('circle', { cx: s0.x.toFixed(1), cy: s0.y.toFixed(1), r: (r + 3).toFixed(1), 'class': 'fx-start' });
+    B.fx.innerHTML = out;
+    var html = '';
+    branches.forEach(function (b) {
+      var cw = b.dir === 'cw', title = cw ? K.Move : 'Normal way', sub;
+      if (!full) sub = cw ? 'clockwise' : 'anticlockwise';
+      else if (b.after === 'capture') sub = (cw ? 'clockwise, ' : '') + 'captures ' + U.plural(b.caught, 'cow');
+      else if (b.after === 'relay') sub = 'lands on seeds, keeps going';
+      else if (b.after === 'choice') sub = 'reaches a capture you can take';
+      else sub = 'ends in ' + (b.end >= 8 ? 'inner' : 'outer') + ' pit ' + E.pitNumber(b.end);
+      html += '<button type="button" class="btn choice ' + (cw ? 'choice-' + ch.name : 'choice-normal') + '" data-dir="' + b.dir + '">' + (cw ? ICON_CW : ICON_CCW) +
+        '<span><b>' + title + '</b><small>' + sub + '</small></span></button>';
+    });
+    var bar = U.$('#chooser');
+    bar.innerHTML = html; bar.hidden = false;
+    if (document.activeElement && document.activeElement.closest && document.activeElement.closest('#pits')) U.$('button', bar).focus();
+  };
+  B.hideChoice = function () { var bar = U.$('#chooser'); bar.hidden = true; bar.innerHTML = ''; B.clearFx(); };
 
   /* ========================================================================
      GAME CONTROLLER
      ======================================================================== */
-  var G = IG.game = { cfg: null, state: null, moves: [], history: [], busy: false, over: true, gen: 0, selected: null, legal: [], log: [], nudge: null, analysis: null, queue: [] };
+  var G = IG.game = { cfg: null, state: null, moves: [], history: [], busy: false, over: true, gen: 0, selected: null, legal: [], log: [], nudge: null, analysis: null, queue: [], choosing: null };
+
+  /* close any open question on the board: capture prompt, explainer, direction choice */
+  function closeQuestions() {
+    if (B.cancelAsk) B.cancelAsk();
+    if (B.cancelExplain) B.cancelExplain();
+    if (G.choosing) { var c = G.choosing; G.choosing = null; B.hideChoice(); if (c.resolve) c.resolve(null); }
+  }
+  G.closeQuestions = closeQuestions;
+  /* is the board asking the player something right now? */
+  G.asking = function () { return !!(G.choosing || B.cancelAsk || B.cancelExplain); };
 
   function seatName(seat) { return G.cfg.seats[seat].name || (seat === 0 ? 'Bottom' : 'Top'); }
   function say(text) { var el = U.$('#say'); if (el) el.textContent = text || ''; }
@@ -197,7 +283,7 @@
    */
   G.start = function (cfg) {
     G.gen++;
-    if (B.cancelAsk) B.cancelAsk();
+    closeQuestions();
     cfg.hooks = cfg.hooks || {};
     cfg.bottom = cfg.bottom === 1 ? 1 : 0;
     G.cfg = cfg;
@@ -217,7 +303,7 @@
 
   G.stop = function () {
     G.gen++;
-    if (B.cancelAsk) B.cancelAsk();
+    closeQuestions();
     G.over = true; G.busy = false; G.selected = null; G.nudge = null;
     V.skip(true);
     setTimeout(function () { V.skip(false); V.rest(0); V.rest(1); }, 40);
@@ -257,15 +343,82 @@
     if (info.relays) s += 'Relays ' + U.times(info.relays) + '. ';
     if (info.captured) s += 'Captures ' + U.plural(info.captured, 'cow') + '. ';
     s += 'Ends in ' + (info.end >= 8 ? 'inner' : 'outer') + ' pit ' + E.pitNumber(info.end) + '.';
-    if (info.choice) s += ' You will be asked which way to sow.';
+    if (info.choice) s += ' Partway through, you choose which way to sow.';
     return s + ' Tap again to sow.';
   }
 
-  G.cancelSelect = function () { if (G.selected !== null) { G.selected = null; B.clearFx(); B.refresh(); say(''); } };
+  G.cancelSelect = function () {
+    if (G.choosing && G.choosing.ch.phase !== 'start') return;          // a move in progress must be finished
+    if (B.cancelExplain || G.choosing) closeQuestions();
+    if (G.selected !== null) { G.selected = null; B.clearFx(); B.refresh(); say(''); }
+  };
+
+  /* both ways a direction decision can go: the pits of the lap it starts, and what its last seed does */
+  function branches(state, start, prefix, from, options) {
+    return options.map(function (o) {
+      var r = E.playTurn(state, start, prefix.concat(o), true), evs = r.events || [], lap = [], k = from;
+      while (k < evs.length && evs[k].t !== 'drop') k++;
+      while (k < evs.length && evs[k].t === 'drop') lap.push(evs[k++].pit);
+      var nx = evs[k] || null, b = { dir: o, pits: lap, end: lap.length ? lap[lap.length - 1] : null, caught: 0 };
+      b.after = nx ? nx.t : r.status === 'pending' ? 'choice' : 'end';
+      if (nx && nx.t === 'capture') { b.caught = nx.n; b.capA = nx.a; b.capB = nx.b; }
+      return b;
+    });
+  }
+  /* options at this decision that lead to a legal, finite move */
+  function legalOptions(start, prefix, options) {
+    return options.filter(function (o) {
+      return G.legal.some(function (m) {
+        if (m.start !== start || m.decisions.length <= prefix.length || m.decisions[prefix.length] !== o) return false;
+        for (var k = 0; k < prefix.length; k++) if (m.decisions[k] !== prefix[k]) return false;
+        return true;
+      });
+    });
+  }
+  /* a choice of direction when the move starts from this pit, or null */
+  G.startChoice = function (i) {
+    var st = G.state, r = E.playTurn(st, i, [], true);
+    if (r.status !== 'pending' || r.pending.type !== 'direction' || r.pending.kind !== 'start') return null;
+    var opts = legalOptions(i, [], r.pending.options);
+    return opts.length > 1 ? { seat: st.turn, pit: i, name: r.pending.name, phase: 'start', start: i, prefix: [], done: 0, options: opts } : null;
+  };
+  /* explain the pit the first time, then ask; resolves 'ccw', 'cw', or null if it was closed */
+  async function offerChoice(ch) {
+    var gen = G.gen, K = B.kind(ch.name);
+    var br = branches(G.state, ch.start, ch.prefix, ch.done, ch.options);
+    if (G.cfg.mode !== 'lesson' && IG.progress && !IG.progress.hasSeen(ch.name)) {
+      say('');
+      var okd = await B.explain(ch);
+      if (!okd || gen !== G.gen) return null;
+      IG.progress.markSeen(ch.name);
+    }
+    return new Promise(function (resolve) {
+      G.choosing = { ch: ch, br: br, resolve: resolve };
+      B.showChoice(ch, br, !G.cfg.noPreview);
+      say('Two ways to sow from this ' + K.pit + ' pit: the normal way, or ' + K.move + ' clockwise. Tap one of the buttons, or a pit on its arrow.');
+    }).then(function (c) { if (G.choosing) { G.choosing = null; B.hideChoice(); } return c; });
+  }
+  /* a tap while the choice is open: a pit on exactly one of the two paths chooses that path */
+  function tapWhileChoosing(p, i) {
+    var C = G.choosing;
+    if (p === C.ch.seat) {
+      var hit = C.br.filter(function (b) { return (G.cfg.noPreview ? b.pits.slice(0, 1) : b.pits).indexOf(i) >= 0; });
+      if (hit.length === 1) { C.resolve(hit[0].dir); return true; }
+    }
+    if (C.ch.phase !== 'start' || (p === C.ch.seat && i === C.ch.pit)) {
+      say('Choose a direction to carry on: tap one of the two buttons under the board.');
+      return true;
+    }
+    G.cancelSelect();                                                   // another pit: choose that one instead
+    return false;
+  }
+  G.chooseDirection = function (dir) { if (G.choosing) G.choosing.resolve(dir); };
 
   G.tap = function (p, i) {
     var st = G.state, cfg = G.cfg;
     if (!st || G.over) return;
+    if (B.cancelExplain) { say('Read the note, then tap Got it.'); return; }
+    if (G.choosing && tapWhileChoosing(p, i)) return;
     if (G.busy) return;
     var seat = st.turn, S = cfg.seats[seat];
     if (S.kind !== 'human') { say('Wait for your turn.'); return; }
@@ -274,6 +427,12 @@
     if (why) { G.cancelSelect(); say(why); IG.audio.tick(); return; }
     if (G.selected === i) { G.humanMove(i); return; }
     G.selected = i; IG.audio.tick();
+    var ch = G.startChoice(i);
+    if (ch) {
+      B.refresh();
+      offerChoice(ch).then(function (dir) { if (dir && G.selected === i && G.state === st) G.humanMove(i, [dir]); });
+      return;
+    }
     if (cfg.noPreview) { B.clearFx(); say('Tap again to sow.'); }
     else {
       var info = G.previewInfo(i);
@@ -305,8 +464,8 @@
   }
 
   /* a human move: animate as far as each decision, ask, continue */
-  G.humanMove = async function (start) {
-    var gen = G.gen, before = G.state, seat = before.turn, dec = [], done = 0, r;
+  G.humanMove = async function (start, preset) {
+    var gen = G.gen, before = G.state, seat = before.turn, dec = (preset || []).slice(), done = 0, r;
     G.busy = true; G.selected = null; B.clearFx(); B.refresh(); say('');
     if (G.cfg.hooks.onHover) G.cfg.hooks.onHover(null);
     var mine = G.legal.filter(function (m) { return m.start === start; });
@@ -328,9 +487,14 @@
         var choice = opts[0];
         if (opts.length > 1) {
           V.hover(seat, seat, r.pending.pit);
-          if (r.pending.type === 'capture') B.setMarks([[1 - seat, 23 - r.pending.pit], [1 - seat, r.pending.pit - 8]], 'warn');
-          choice = await B.ask(r.pending, seat, opts);
-          B.marks = {};
+          if (r.pending.type === 'capture') {
+            B.setMarks([[1 - seat, 23 - r.pending.pit], [1 - seat, r.pending.pit - 8]], 'warn');
+            choice = await B.ask(r.pending, seat, opts);
+            B.marks = {};
+          } else {
+            choice = await offerChoice({ seat: seat, pit: r.pending.pit, name: r.pending.name, phase: r.pending.kind === 'capsow' ? 'capsow' : 'relay',
+              start: start, prefix: dec, done: done, options: opts });
+          }
           if (gen !== G.gen || choice === null) return;
         }
         dec = dec.concat(choice);
@@ -478,7 +642,7 @@
   G.resign = function (seat) {
     if (G.over || !G.cfg || G.cfg.solo) return;
     G.gen++;
-    if (B.cancelAsk) B.cancelAsk();
+    closeQuestions();
     V.skip(true);
     var gen = G.gen;
     setTimeout(function () {
@@ -528,7 +692,7 @@
     if (!G.canUndo()) return;
     G.gen++;
     var gen = G.gen;
-    if (B.cancelAsk) B.cancelAsk();
+    closeQuestions();
     while (G.history.length) {
       var st = G.history.pop(); G.moves.pop(); G.log.pop();
       if (G.cfg.seats[st.turn].kind === 'human') { G.state = st; break; }
@@ -550,7 +714,8 @@
     IG.ai.request(st, 'hint').then(function (res) {
       if (gen !== G.gen || G.state !== st || !res) return;
       B.setGlow([[st.turn, res.move.start]]);
-      say('Try the glowing pit: ' + (res.move.start >= 8 ? 'inner' : 'outer') + ' pit ' + E.pitNumber(res.move.start) + '.');
+      var rk = res.move.decisions[0] === 'cw' ? E.reverseKind(st.rules, res.move.start) : null;
+      say('Try the glowing pit: ' + (res.move.start >= 8 ? 'inner' : 'outer') + ' pit ' + E.pitNumber(res.move.start) + (rk ? ', then choose ' + rk + '.' : '.'));
       setTimeout(function () { if (G.state === st) B.setGlow([]); }, 4000);
     });
   };

@@ -4,13 +4,25 @@ const wait = (pg, ms) => pg.waitForTimeout(ms);
 const idle = pg => pg.waitForFunction('!window.IG.game.busy', null, { timeout: 300000 });
 const G = (pg, expr) => pg.evaluate('(function(){var G=window.IG.game,E=window.IgisoroEngine,V=window.IG.view,L=window.IG.learn,Z=window.IG.puzzle,P=window.IG.progress;return ' + expr + ';})()');
 
+/* answer whatever the board is asking: the explainer, the direction chooser, or a capture prompt. True if it answered. */
+async function answer(pg, decision) {
+  if (await pg.isVisible('#prompt [data-got]')) { await pg.click('#prompt [data-got]'); return true; }
+  if (await pg.isVisible('#chooser')) {
+    const want = '#chooser [data-dir="' + (decision === 'cw' ? 'cw' : 'ccw') + '"]';
+    await pg.click(want).catch(() => pg.click('#chooser [data-dir]'));
+    return true;
+  }
+  if (await pg.isVisible('#prompt [data-choice]')) { await pg.click('#prompt [data-choice]'); return true; }
+  return false;
+}
 async function humanMove(pg, pit, decision) {
   const sel = pit === undefined ? '.pit.playable' : '#pit-' + (await G(pg, 'G.state.turn')) + '-' + pit;
   await pg.click(sel); await wait(pg, 60);
-  await pg.click(pit === undefined ? '.pit.sel' : sel);
+  // a pit with a choice of direction opens the chooser (after the explainer, the first time); otherwise tap again
+  if (!(await answer(pg, decision))) await pg.click(pit === undefined ? '.pit.sel' : sel);
   for (let k = 0; k < 6000; k++) {
     await wait(pg, 50);
-    if (await pg.isVisible('#prompt')) { await pg.click('#prompt [data-choice="' + (decision || 'ccw') + '"]').catch(() => pg.click('#prompt [data-choice]')); continue; }
+    if (await answer(pg, decision)) continue;
     if (!(await G(pg, 'G.busy'))) break;
   }
 }
@@ -40,7 +52,7 @@ module.exports = {
       if (!pick) break;
       await pg.click('#pit-0-' + pick.start); await wait(pg, 80);
       if (!shotHand) { await t.shot(pg, 'game-preview'); }
-      await pg.click('#pit-0-' + pick.start);
+      if (!(await answer(pg, pick.dec[0]))) await pg.click('#pit-0-' + pick.start);
       if (!shotHand) { await pg.evaluate('window.IG.view.setSpeed(1)'); await wait(pg, 1500); await t.shot(pg, 'game-hand'); await pg.evaluate('window.IG.view.setSpeed(40)'); shotHand = true; }
       if (pick.cap && !shotCapture) {
         await pg.evaluate('window.IG.view.setSpeed(1)');
@@ -48,7 +60,7 @@ module.exports = {
         await wait(pg, 900); await t.shot(pg, 'game-capture'); shotCapture = true;
         await pg.evaluate('window.IG.view.setSpeed(40)');
       }
-      for (let i = 0; i < 6000 && await G(pg, 'G.busy && G.cfg.seats[G.state.turn].kind === "human"'); i++) { if (await pg.isVisible('#prompt')) await pg.click('#prompt [data-choice]'); await wait(pg, 50); }
+      for (let i = 0; i < 6000 && await G(pg, 'G.busy && G.cfg.seats[G.state.turn].kind === "human"'); i++) { await answer(pg, pick.dec[0]); await wait(pg, 50); }
       moves++;
       await pg.waitForFunction('!window.IG.game.busy', null, { timeout: 300000 });
       okAll = (await consistent(pg, 'after move ' + moves + (pick.cap ? ' (captured ' + pick.cap + ')' : ''))) && okAll;
@@ -180,7 +192,7 @@ module.exports = {
       await pg.waitForFunction('window.IG.game.over || (!window.IG.game.busy && !window.IG.game.nudge && window.IG.game.cfg.seats[window.IG.game.state.turn].kind === "human") || window.IG.game.nudge', null, { timeout: 60000 });
       if (await G(pg, '!!G.nudge')) { await pg.click('[data-act="nudge-ok"]'); continue; }
       if (await G(pg, 'G.over')) break;
-      await pg.click('.pit.playable'); await wait(pg, 60); await pg.click('.pit.sel'); await wait(pg, 400); await idle(pg);
+      await pg.click('.pit.playable'); await wait(pg, 60); if (!(await answer(pg))) await pg.click('.pit.sel'); await wait(pg, 400); await idle(pg);
     }
     await consistent(pg, 'flat after moves');
     await t.shot(pg, 'flat');
@@ -284,7 +296,7 @@ module.exports.online = async function (b, t) {
     await pg.waitForFunction('!window.IG.game.busy', null, { timeout: 120000 });
     const pit = await N(pg, 'G.legal[Math.floor(G.legal.length / 2)].start');
     await pg.click('#pit-' + turn + '-' + pit); await wait(pg, 50); await pg.click('#pit-' + turn + '-' + pit);
-    for (let k = 0; k < 2000; k++) { await wait(pg, 50); if (await pg.isVisible('#prompt')) await pg.click('#prompt [data-choice]'); if (!(await N(pg, 'G.busy'))) break; }
+    for (let k = 0; k < 2000; k++) { await wait(pg, 50); await answer(pg); if (!(await N(pg, 'G.busy'))) break; }
   };
   let good = true;
   for (let k = 0; k < 4; k++) { await playOne(); good = (await sync('after move ' + (k + 1))) && good; }
@@ -430,4 +442,110 @@ module.exports.motion = async function (b, t) {
   if (video) console.log('  wrote ' + frame + ' frames to ' + dir);
   console.log(pg.errors.length ? '  MOTION ERRORS ' + JSON.stringify(pg.errors) : '  MOTION OK');
   await pg.close();
+};
+
+
+/* ---------------------------------------------------------------------------
+   Nteba and Ngarama: the one-time explainer and the two-arrow chooser.
+   --------------------------------------------------------------------------- */
+module.exports.chooser = async function (b, t) {
+  for (const vp of [{ name: 'desktop', o: {} }, { name: 'phone', o: { viewport: { width: 390, height: 780 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true } }]) {
+    const pg = await t.open(b, vp.o);
+    await pg.evaluate('window.IG.view.setSpeed(40); window.IG.view.setSpeed = function () {};');
+    // a pass-and-play game on Traditional rules, from a given position (my = bottom)
+    const setup = (my, op) => pg.evaluate(([my, op]) => {
+      const E = window.IgisoroEngine, a = new Array(16).fill(0), c = new Array(16).fill(0);
+      Object.keys(my).forEach(k => { a[k] = my[k]; }); Object.keys(op).forEach(k => { c[k] = op[k]; });
+      c[5] += 64 - a.reduce((x, y) => x + y, 0) - c.reduce((x, y) => x + y, 0);
+      window.IG.ui.mode = 'game'; document.body.dataset.mode = 'game';
+      window.IG.game.start({ mode: 'local', rules: E.makeRules({ reverseSowing: true }), first: 0, ply: 2, pits: [a, c], bottom: 0,
+        seats: [{ kind: 'human', name: 'Bottom' }, { kind: 'human', name: 'Top' }], labels: ['Bottom', 'Top'] });
+    }, [my, op]);
+    const state = () => pg.evaluate('({ explain: !document.querySelector("#prompt").hidden && !!document.querySelector("#prompt [data-got]"), title: (document.querySelector(".explain-title")||{}).textContent || "", chooser: !document.querySelector("#chooser").hidden, buttons: [].map.call(document.querySelectorAll("#chooser .choice"), function (b) { return b.textContent.trim().replace(/\\s+/g, " "); }), marks: [].map.call(document.querySelectorAll(".pit.mark"), function (b) { return b.id; }), heads: document.querySelectorAll("#fx .fx-head").length, sel: window.IG.game.selected, moves: window.IG.game.moves.length })');
+    const GUTEBA = [{ 14: 2, 12: 1, 4: 2, 6: 1 }, { 11: 2, 4: 2, 13: 1, 1: 2 }];
+    let ok = true; const check = (c, label, extra) => { if (!c) ok = false; console.log('  ' + vp.name + ': ' + (c ? 'ok  ' : 'BAD ') + label + (extra ? '  ' + extra : '')); };
+
+    // no opportunity, no explainer: pit 14 where the clockwise lap would not capture
+    await setup({ 14: 2, 12: 1, 4: 2 }, { 11: 2, 13: 1, 1: 2 });
+    await pg.click('#pit-0-14'); await wait(pg, 150);
+    let st = await state();
+    check(!st.explain && !st.chooser && st.sel === 14, 'a Nteba pit with no capture available shows the ordinary preview');
+
+    await setup(...GUTEBA);
+    await pg.click('#pit-0-14'); await wait(pg, 200);
+    st = await state();
+    check(st.explain && /Nteba/.test(st.title) && JSON.stringify(st.marks) === JSON.stringify(['pit-0-0', 'pit-0-14']), 'first opportunity: the explainer, with both Nteba pits ringed', JSON.stringify([st.title, st.marks]));
+    await t.shot(pg, 'chooser-explain-' + vp.name);
+    await pg.click('#pit-0-4'); await wait(pg, 100);
+    check((await state()).explain, 'the explainer stays until Got it');
+    await pg.click('#prompt [data-got]'); await wait(pg, 200);
+    st = await state();
+    check(st.chooser && st.heads === 2 && st.buttons.length === 2 && /Normal way/.test(st.buttons[0]) && /Guteba/.test(st.buttons[1]), 'then two arrows and two buttons', JSON.stringify(st.buttons));
+    await t.shot(pg, 'chooser-arrows-' + vp.name);
+    await pg.click('#pit-0-13'); await wait(pg, 300); await idle(pg); await wait(pg, 200);
+    let last = await G(pg, '{ move: G.moves[0], cows: G.state.captured[0], sow: G.log[0].text }');
+    check(JSON.stringify(last.move) === '{"start":14,"decisions":["cw"]}' && last.cows === 4, 'tapping a pit on the clockwise arrow plays guteba', JSON.stringify(last));
+
+    // seen once: straight to the arrows; Escape closes them
+    await setup(...GUTEBA);
+    await pg.click('#pit-0-14'); await wait(pg, 200);
+    st = await state();
+    check(!st.explain && st.chooser, 'second time: no explainer, straight to the arrows');
+    await pg.keyboard.press('Escape'); await wait(pg, 150);
+    st = await state();
+    check(!st.chooser && st.sel === null, 'Escape closes the arrows and clears the selection');
+    // another pit while choosing selects that pit instead
+    await pg.click('#pit-0-14'); await wait(pg, 150); await pg.click('#pit-0-4'); await wait(pg, 150);
+    st = await state();
+    check(!st.chooser && st.sel === 4, 'tapping a pit off both arrows switches to that pit');
+    await pg.click('#pit-0-14'); await wait(pg, 150);
+    await pg.click('#chooser [data-dir="ccw"]'); await wait(pg, 300); await idle(pg);
+    last = await G(pg, '{ move: G.moves[0], cows: G.state.captured[0] }');
+    check(JSON.stringify(last.move) === '{"start":14,"decisions":["ccw"]}' && last.cows === 0, 'the Normal way button plays anticlockwise');
+
+    // kugarama has its own explainer
+    await setup({ 7: 9, 14: 1, 3: 2 }, { 9: 2, 6: 2, 12: 1, 0: 3 });
+    await pg.click('#pit-0-7'); await wait(pg, 200);
+    st = await state();
+    check(st.explain && /Ngarama/.test(st.title) && JSON.stringify(st.marks) === JSON.stringify(['pit-0-7', 'pit-0-9']), 'first kugarama: its own explainer, Ngarama pits ringed', JSON.stringify(st.marks));
+    await pg.click('#prompt [data-got]'); await wait(pg, 150);
+    await pg.click('#chooser [data-dir="cw"]'); await wait(pg, 300); await idle(pg);
+    last = await G(pg, '{ move: G.moves[0], cows: G.state.captured[0] }');
+    check(JSON.stringify(last.move) === '{"start":7,"decisions":["cw"]}' && last.cows === 4, 'kugarama plays and captures 4', JSON.stringify(last));
+
+    // a relay that reaches a Nteba pit asks in the middle of the move
+    await setup({ 12: 2, 14: 2, 11: 1 }, { 12: 2, 3: 2 });
+    await pg.click('#pit-0-12'); await wait(pg, 150);
+    const say1 = await pg.textContent('#say');
+    await pg.click('#pit-0-12');
+    await pg.waitForFunction('!document.querySelector("#chooser").hidden', null, { timeout: 60000 });
+    st = await state();
+    check(/Partway through/.test(say1) && st.chooser && st.heads === 2, 'a relay into a Nteba pit opens the arrows mid-move', say1);
+    await t.shot(pg, 'chooser-midmove-' + vp.name);
+    await pg.keyboard.press('Escape'); await wait(pg, 100);
+    check((await state()).chooser, 'mid-move, Escape does not abandon the move');
+    await pg.click('#chooser [data-dir="cw"]'); await idle(pg); await wait(pg, 200);
+    last = await G(pg, '{ move: G.moves[0], cows: G.state.captured[0] }');
+    check(JSON.stringify(last.move) === '{"start":12,"decisions":["cw"]}' && last.cows === 4, 'the mid-move choice plays guteba', JSON.stringify(last));
+
+    // at a table (no previews) the arrows show direction only
+    await pg.evaluate(() => { window.IG.game.cfg.noPreview = true; });
+    await setup(...GUTEBA); await pg.evaluate(() => { window.IG.game.cfg.noPreview = true; });
+    await pg.click('#pit-0-14'); await wait(pg, 200);
+    st = await state();
+    check(st.chooser && /anticlockwise/.test(st.buttons[0]) && /clockwise$/.test(st.buttons[1]) && !(await pg.$('#fx .fx-cap')), 'with previews off, the arrows show direction only', JSON.stringify(st.buttons));
+    await pg.keyboard.press('Escape');
+
+    // keyboard: Enter on the pit opens the arrows and focuses the first button
+    await setup(...GUTEBA);
+    await pg.focus('#pit-0-14'); await pg.keyboard.press('Enter'); await wait(pg, 200);
+    const focused = await pg.evaluate('document.activeElement && document.activeElement.dataset.dir');
+    await pg.keyboard.press('Tab'); await pg.keyboard.press('Enter'); await wait(pg, 300); await idle(pg);
+    last = await G(pg, '{ move: G.moves[0] }');
+    check(focused === 'ccw' && JSON.stringify(last.move) === '{"start":14,"decisions":["cw"]}', 'keyboard: Enter, Tab, Enter plays guteba', focused);
+
+    console.log('  ' + vp.name + ': seen = ' + JSON.stringify(await G(pg, 'P.data.seen')) + (pg.errors.length ? '  ERRORS ' + JSON.stringify(pg.errors) : ''));
+    console.log(ok && !pg.errors.length ? '  CHOOSER OK (' + vp.name + ')' : '  CHOOSER HAD PROBLEMS (' + vp.name + ')');
+    await pg.close();
+  }
 };
