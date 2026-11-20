@@ -44,7 +44,7 @@
 
     { id: 'L2', title: 'Relay', blurb: 'Land on seeds, lift them all, keep going.', minutes: 2, rules: R2, veil: true, steps: [
       { type: 'say', text: 'A move does not always stop after one lap. If your last seed lands in a pit that already holds seeds, you lift them all and keep sowing. That is a relay.' },
-      { type: 'demo', pos: { my: { 0: 2, 2: 2, 9: 3 }, op: 'std' }, move: { start: 0, decisions: [] },
+      { type: 'demo', pos: { my: { 0: 2, 2: 2, 9: 3 }, op: 'std' }, move: { start: 0, decisions: [] }, expect: { relays: 1, captures: 0 },
         text: 'Watch. Two seeds from the left-hand pit. The second lands on a full pit, so the hand lifts everything there and carries on.',
         after: 'The last seed fell in an empty pit, so the move ended.' },
       { type: 'do', pos: { my: { 0: 2, 2: 2, 9: 3 }, op: 'std' }, goal: { type: 'from', start: 0 }, glow: [0], only: [0], answer: 0,
@@ -63,9 +63,12 @@
 
     { id: 'L3', title: 'Capturing cows', blurb: 'Land in the right pit and take what faces it.', minutes: 2, rules: LEARN, steps: [
       { type: 'say', text: 'Now the far side matters. Your opponent’s seeds are cows (inka), and you win by taking them. To capture is kurasa.' },
-      { type: 'demo', pos: { my: { 8: 2, 10: 1, 3: 2 }, op: { 13: 3, 2: 2, 9: 2, 6: 1 } }, move: { start: 8, decisions: [] },
+      { type: 'demo', pos: { my: { 8: 2, 10: 1, 3: 2 }, op: { 13: 3, 2: 2, 9: 2, 6: 1 } }, move: { start: 8, decisions: [] }, expect: { relays: 0, captures: 1, captured: 5, sowFrom: 8 },
         text: 'Watch. The last seed lands in a full pit of your inner row. Both pits facing it hold cows, so you take them both.',
-        after: 'The captured cows were sown on your side, starting from the pit after the one where the move began.' },
+        after: 'The captured cows were sown on your side, starting just after the pit you picked up from.' },
+      { type: 'demo', pos: { my: { 4: 2, 6: 4, 11: 1 }, op: { 12: 3, 3: 2, 9: 2, 6: 1 } }, move: { start: 4, decisions: [] }, expect: { captures: 1, captured: 5, sowFrom: 6 }, marks: [[0, 6, 'alt']],
+        text: 'One more. This move relays from the marked pit, then captures. Watch where the cows start.',
+        after: 'The cows started just after the marked pit: the last pit the hand picked up from, not the first.' },
       { type: 'do', pos: { my: { 3: 1, 5: 2, 6: 2, 8: 3, 11: 1, 14: 3, 15: 3 }, op: { 0: 2, 3: 3, 4: 3, 8: 2, 9: 3, 10: 1, 15: 2 } },
         goal: { type: 'capture', min: 1 }, answer: 6,
         text: 'Your turn. One of your moves captures. Find it. The preview circles the pits a move would take.',
@@ -78,7 +81,7 @@
         mid: 'Your opponent has moved. Now capture.',
         wrong: 'That missed the capture. Start again.',
         right: 'Planned and taken. {captured} cows.' },
-      { type: 'recap', points: ['Land your last seed in a full pit of your inner row.', 'If both pits facing it hold seeds, you capture both.', 'Sow the captured cows on your own side, starting where your move began.', 'A capture can lead to another capture in the same turn.'] }
+      { type: 'recap', points: ['Land your last seed in a full pit of your inner row.', 'If both pits facing it hold seeds, you capture both.', 'Sow the captured cows on your own side, starting just after the last pit you picked up from.', 'A capture can lead to another capture in the same turn.'] }
     ] },
 
     { id: 'L4', title: 'Defence', blurb: 'See what is exposed. Move it, or lose it.', minutes: 2, rules: LEARN, steps: [
@@ -105,7 +108,7 @@
       { type: 'do', pos: { my: { 14: 2, 12: 1, 4: 2, 6: 1 }, op: { 11: 2, 4: 2, 13: 1, 1: 2 } }, goal: { type: 'cw' }, glow: [14], only: [14], answer: 14, answerDecisions: ['cw'],
         text: 'Sow from the glowing Nteba pit. When the hand stops and asks, choose guteba.',
         wrong: 'That was the normal direction. Try again and choose guteba.',
-        right: 'Guteba. The cows were sown clockwise too, following the lap that took them.' },
+        right: 'Guteba. Then the cows went the normal way, starting from the Nteba pit you picked up from.' },
       { type: 'do', pos: { my: { 7: 9, 14: 1, 3: 2 }, op: { 9: 2, 6: 2, 12: 1, 0: 3 } }, goal: { type: 'cw' }, glow: [7], only: [7], answer: 7, answerDecisions: ['cw'],
         text: 'Now the other side. This Ngarama pit holds 9 seeds: enough to travel back along your outer row and round into your inner row. Sow from it and choose kugarama.',
         wrong: 'That was the normal direction. Try again and choose kugarama.',

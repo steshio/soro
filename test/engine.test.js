@@ -57,6 +57,21 @@ console.log('Hand-built positions');
   eq(r2.my.slice(8, 14), [1, 2, 3, 1, 1, 0], 'capture: origin variant sows into the origin first');
 }
 
+/* 2b. Captured seeds start from the pit last lifted, not the pit the move began from (founder, 20 Nov 2026).
+       2 seeds from pit 4: 5, 6. Pit 6 held 4, so relay with 5: 7, 8, 9, 10, 11. Pit 11 held 1 and faces opponent 12 and 3: capture 5.
+       The cows are sown from pit 6, the pit last lifted: 7, 8, 9, 10, 11. */
+{
+  const s = pos({ 4: 2, 6: 4, 11: 1 }, { 12: 3, 3: 2, 0: 52 });
+  const r = run(s, 4);
+  eq(r.captured, 5, 'origin: the relay lap captures');
+  const sow = r.events.find(e => e.t === 'capsow');
+  eq([sow.from, sow.dir], [6, 1], 'origin: cows are sown from the pit last lifted (6), not the start pit (4)');
+  eq(r.my.slice(4, 15), [0, 1, 0, 2, 2, 2, 2, 0, 1, 1, 1], 'origin: final position');
+  // the 'origin' variant drops the first cow into that pit itself
+  const s2 = pos({ 4: 2, 6: 4, 11: 1 }, { 12: 3, 3: 2, 0: 52 }, { rules: { reverseSowing: false, captureSowStart: 'origin' } });
+  eq(run(s2, 4).events.find(e => e.t === 'capsow').from, 6, 'origin: the origin variant uses the pit last lifted too');
+}
+
 /* 3. Chained capture: the captured lap itself ends on an occupied inner pit with both opposite pits full. */
 {
   // First capture at 10 takes 1+1 = 2 cows; they are sown into 9 and 10 -> 10 is occupied, inner,
@@ -94,7 +109,8 @@ console.log('Hand-built positions');
   eq(cw.captured, 4, 'guteba: clockwise lap captures');
   eq(cw.events[0].dir, -1, 'guteba: lift is clockwise');
   const sow = cw.events.find(e => e.t === 'capsow');
-  eq(sow.dir, -1, 'guteba: cows are sown in the direction of the capturing lap');
+  eq([sow.from, sow.dir], [14, 1], 'guteba: cows are sown from the Nteba pit, the normal way, when clockwise would not capture again');
+  eq([cw.my[15], cw.my[0], cw.my[1], cw.my[2]], [1, 1, 1, 1], 'guteba: the 4 cows go 15, 0, 1, 2');
   const ccw = run(s, 14, ['ccw']);
   eq(ccw.status, 'done', 'guteba: the normal direction is still allowed');
   eq(ccw.captured, 0, 'guteba: the normal direction does not capture here');
@@ -116,6 +132,15 @@ console.log('Hand-built positions');
   const k9 = pos({ 9: 10, 15: 1 }, { 8: 2, 7: 1, 0: 50 }, { rules: T });
   eq(run(k9, 9).status, 'pending', 'kugarama: offered from the inner Ngarama pit');
   eq(run(k9, 9, ['cw']).captured, 3, 'kugarama: from pit 9 captures');
+
+  // After guteba, if sowing the cows clockwise from the Nteba pit would capture again, that is offered too.
+  // cw 13, 12: capture 4. Cows clockwise 13, 12, 11, 10: pit 10 held 1 and faces opponent 13 and 2.
+  const g2 = pos({ 14: 2, 12: 1, 10: 1 }, { 11: 2, 4: 2, 13: 1, 2: 1, 0: 55 }, { rules: T });
+  const g2p = run(g2, 14, ['cw']);
+  eq([g2p.status, g2p.pending && g2p.pending.kind, g2p.pending && g2p.pending.pit, g2p.pending && g2p.pending.name], ['pending', 'capsow', 14, 'guteba'], 'guteba: a clockwise cow-sow is offered from the Nteba pit when it captures');
+  eq(run(g2, 14, ['cw', 'cw']).captured, 6, 'guteba: clockwise cows capture again');
+  const g2n = run(g2, 14, ['cw', 'ccw']);
+  eq([g2n.captured, g2n.events.find(e => e.t === 'capsow').dir], [4, 1], 'guteba: or the cows go the normal way');
 
   // Same shape but the clockwise lap would not capture (facing outer pit empty): no choice.
   const s2 = pos({ 14: 2, 12: 1 }, { 11: 2, 4: 0, 0: 59 }, { rules: T });

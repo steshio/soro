@@ -30,8 +30,10 @@ for (const lesson of L.LESSONS) {
       const s = state(lesson, step);
       const info = infoFor(s, step.move);
       ok(true, tag);
-      if (lesson.id === 'L2') ok(info.relays === 1 && info.captured === 0, tag + ': shows exactly one relay');
-      if (lesson.id === 'L3') ok(info.captures === 1 && info.captured === 5 && info.relays === 0, tag + ': shows one clean capture', JSON.stringify([info.captures, info.captured, info.relays]));
+      // each demo shows exactly what its text says
+      const x = step.expect || {}, got = { relays: info.relays, captures: info.captures, captured: info.captured, sowFrom: (info.events.find(e => e.t === 'capsow') || {}).from };
+      ok(!!step.expect, tag + ': states what it shows');
+      for (const k in x) ok(got[k] === x[k], tag + ': ' + k + ' is ' + x[k], 'got ' + got[k]);
     }
     if (step.type === 'free') {
       const s = state(lesson, step);
