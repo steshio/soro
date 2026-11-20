@@ -25,7 +25,7 @@
     minSeedsToSow: 2,              // a pit needs this many seeds to be played
     seedsPerInnerPit: 4,           // default setup: inner rows filled, outer rows empty
     captureMode: 'forced',         // 'forced' | 'optional' (ndahise allowed)
-    captureSowStart: 'afterOrigin',// 'afterOrigin' | 'origin': where the first captured seed goes
+    captureSowStart: 'afterOrigin',// 'afterOrigin' | 'origin': first captured seed goes after, or into, the pit last lifted
     reverseSowing: true,           // guteba and kugarama: clockwise laps from the four special pits
     ntebaPits: [0, 14],            // Nteba: outer leftmost, inner second from the left. Clockwise from here is guteba.
     ngaramaPits: [7, 9],           // Ngarama: outer rightmost, inner second from the right. Clockwise from here is kugarama.
@@ -146,7 +146,7 @@
     var ev = wantLog ? [] : null;
     var di = 0, drops = 0, laps = 0, captured = 0, captures = 0;
     var seen = {};
-    var origin = start;
+    var origin = start;       // the pit last lifted from: captured seeds are sown from here
 
     function isRev(i) { return reverseKind(R, i) !== null; }
 
@@ -167,13 +167,15 @@
     var cur = start;          // pit to lift from (start or relay)
     var liftKind = 'start';
     var n, dir, first, end, before, j, pit, choice;
-    var capSow = null;        // {n, dir} when the next lap sows captured seeds
+    var capSow = null;        // {n} when the next lap sows captured seeds
 
     for (;;) {
       if (capSow) {
-        /* ---- lap that sows captured seeds from the origin pit ---- */
-        n = capSow.n; dir = capSow.dir;
-        if (dir === 1 && rev && isRev(origin)) {
+        /* ---- lap that sows captured seeds, as if they were just picked up from the origin pit ----
+           The normal direction applies again, whatever direction made the capture. If the origin is a
+           Nteba or Ngarama pit and sowing the cows clockwise would capture directly, that is offered. */
+        n = capSow.n; dir = 1;
+        if (rev && isRev(origin)) {
           var cwFirst = R.captureSowStart === 'origin' ? origin : mod16(origin - 1);
           if (lapCaptures(cwFirst, n, -1)) {
             if (di >= decisions.length) return pending('direction', origin, ['ccw', 'cw'], 'capsow');
@@ -192,6 +194,7 @@
         seen[key] = 1;
         n = my[cur];
         my[cur] = 0;
+        origin = cur;
         dir = 1;
         if (rev && isRev(cur) && lapCaptures(mod16(cur - 1), n, -1)) {
           if (di >= decisions.length) { my[cur] = n; return pending('direction', cur, ['ccw', 'cw'], liftKind); }
@@ -236,7 +239,7 @@
             captured += na + nb; captures++;
             seen = {};                                       // opponent lost seeds: no earlier state can recur
             if (ev) ev.push({ t: 'capture', pit: end, a: a, b: b, na: na, nb: nb, n: na + nb });
-            capSow = { n: na + nb, dir: dir };
+            capSow = { n: na + nb };
             continue;
           }
           if (ev) ev.push({ t: 'pass', pit: end });
